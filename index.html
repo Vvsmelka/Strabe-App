@@ -2,391 +2,388 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>Strabe Motion — Parking en Bilbao</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Strabe Motion</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    :root{
-      --g:#0D4A3E;--gl:#1a6155;--gold:#C9A96E;--golm:#a8875a;--goll:#dfc08e;
-      --cr:#f5efe4;--crd:#e8dece;--tx:#1a1a1a;--txm:#5a5a5a;
-      --bd:rgba(201,169,110,0.25);--bds:rgba(201,169,110,0.5);
-    }
-    html,body{height:100%;font-family:'DM Sans',sans-serif;color:var(--tx);background:var(--g);overflow:hidden;}
-    #topbar{position:fixed;top:0;left:0;right:0;z-index:1000;height:56px;background:var(--g);border-bottom:1px solid rgba(201,169,110,0.25);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
-    .logo{display:flex;align-items:center;gap:9px;text-decoration:none;}
-    .logo svg{width:30px;height:30px;}
-    .logo-text{font-family:'Cormorant Garamond',serif;color:var(--gold);}
-    .logo-text b{font-size:17px;font-weight:600;letter-spacing:0.16em;display:block;line-height:1.1;}
-    .logo-text small{font-size:10px;letter-spacing:0.22em;color:var(--golm);display:block;}
-    #auth-btn{background:rgba(201,169,110,0.12);border:1px solid var(--bds);color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.08em;padding:7px 16px;border-radius:20px;cursor:pointer;transition:background 0.15s;}
-    #auth-btn:hover{background:rgba(201,169,110,0.22);}
-    #user-area{display:flex;align-items:center;gap:10px;}
-    #user-name{font-size:12px;color:var(--golm);letter-spacing:0.06em;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    #logout-btn{background:none;border:none;color:rgba(201,169,110,0.45);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.06em;transition:color 0.15s;padding:4px;}
-    #logout-btn:hover{color:var(--gold);}
-    #map{position:fixed;top:56px;left:0;right:0;bottom:0;z-index:1;}
-    .leaflet-tile-pane{filter:saturate(0.65) brightness(0.82);}
-    .leaflet-control-zoom a{background:var(--g)!important;color:var(--gold)!important;border-color:var(--bds)!important;}
-    .leaflet-control-attribution{display:none;}
-    .sm-marker{background:var(--g);border:2px solid var(--gold);border-radius:50% 50% 50% 0;transform:rotate(-45deg);width:34px;height:34px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4);cursor:pointer;}
-    .sm-marker span{transform:rotate(45deg);font-size:10px;font-weight:500;color:var(--gold);font-family:'DM Sans',sans-serif;}
-    .sm-marker.occupied{border-color:rgba(201,169,110,0.3);background:rgba(9,46,39,0.85);}
-    .sm-marker.occupied span{color:rgba(201,169,110,0.3);}
-    #panel{position:fixed;top:56px;right:0;bottom:0;width:380px;z-index:500;background:var(--cr);border-left:1px solid var(--bd);transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;}
-    #panel.open{transform:translateX(0);}
-    .panel-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--txm);font-size:22px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background 0.1s;z-index:10;}
-    .panel-close:hover{background:var(--crd);}
-    .view{padding:28px 24px 40px;display:none;flex-direction:column;}
-    .view.active{display:flex;}
-    .plaza-zona{font-size:10px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:var(--golm);margin-bottom:5px;}
-    .plaza-nombre{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--g);line-height:1.15;margin-bottom:5px;}
-    .plaza-dir{font-size:13px;color:var(--txm);margin-bottom:22px;}
-    .plaza-attrs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
-    .attr-card{background:var(--g);border-radius:10px;padding:14px 16px;}
-    .attr-label{font-size:10px;letter-spacing:0.1em;color:rgba(201,169,110,0.5);text-transform:uppercase;margin-bottom:6px;}
-    .attr-value{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--gold);font-weight:600;line-height:1;}
-    .attr-unit{font-size:12px;color:var(--golm);margin-left:3px;}
-    .plaza-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:26px;}
-    .tag{font-size:11px;padding:4px 11px;border-radius:20px;background:rgba(13,74,62,0.08);border:1px solid rgba(13,74,62,0.15);color:var(--g);}
-    .primary-btn{width:100%;padding:14px;background:var(--g);color:var(--gold);border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.15s;margin-bottom:10px;}
-    .primary-btn:hover:not(:disabled){background:var(--gl);}
-    .primary-btn:disabled{opacity:0.4;cursor:not-allowed;}
-    .login-hint{font-size:12px;color:var(--txm);text-align:center;}
-    .login-hint a{color:var(--golm);cursor:pointer;text-decoration:underline;}
-    .view-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--g);margin-bottom:6px;}
-    .view-sub{font-size:13px;color:var(--txm);margin-bottom:24px;line-height:1.5;}
-    .auth-tabs{display:flex;margin-bottom:22px;border-bottom:2px solid var(--crd);}
-    .auth-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;letter-spacing:0.05em;cursor:pointer;color:var(--txm);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;}
+    :root{--g:#0D4A3E;--gl:#1a6155;--gold:#C9A96E;--golm:#a8875a;--goll:#dfc08e;--cr:#f5efe4;--crd:#e8dece;--tx:#1a1a1a;--txm:#5a5a5a;--txl:#9a9a9a;--bd:rgba(201,169,110,0.22);--bds:rgba(201,169,110,0.5);--shadow:0 4px 20px rgba(0,0,0,0.1);--shadow-lg:0 12px 40px rgba(0,0,0,0.16);}
+    html,body{height:100%;font-family:'DM Sans',sans-serif;color:var(--tx);background:#000;overflow:hidden;}
+    #splash{position:fixed;inset:0;z-index:9000;background:var(--g);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity 0.6s ease,transform 0.6s ease;}
+    #splash.out{opacity:0;transform:scale(1.04);pointer-events:none;}
+    .splash-logo{display:flex;flex-direction:column;align-items:center;gap:14px;animation:splashIn 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards;opacity:0;}
+    @keyframes splashIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .splash-s svg{width:64px;height:64px;}
+    .splash-wordmark{font-family:'Cormorant Garamond',serif;color:var(--gold);text-align:center;}
+    .sw-main{font-size:32px;font-weight:600;letter-spacing:0.22em;display:block;line-height:1;}
+    .sw-sub{font-size:12px;letter-spacing:0.3em;color:var(--golm);display:block;margin-top:2px;}
+    .splash-tagline{font-size:13px;color:rgba(201,169,110,0.45);letter-spacing:0.14em;animation:splashIn 0.8s 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards;opacity:0;}
+    .splash-loader{width:40px;height:2px;background:rgba(201,169,110,0.15);border-radius:2px;overflow:hidden;animation:splashIn 0.5s 0.4s ease forwards;opacity:0;}
+    .splash-loader-fill{height:100%;background:var(--gold);border-radius:2px;animation:sload 1.8s 0.5s ease forwards;}
+    @keyframes sload{from{width:0}to{width:100%}}
+    #onboarding{position:fixed;inset:0;z-index:8000;background:var(--cr);display:flex;flex-direction:column;transform:translateY(100%);transition:transform 0.5s cubic-bezier(0.4,0,0.2,1);}
+    #onboarding.in{transform:translateY(0);}
+    #onboarding.out{transform:translateY(-100%);pointer-events:none;}
+    .ob-header{background:var(--g);padding:20px 24px 18px;display:flex;align-items:center;gap:10px;}
+    .ob-header svg{width:26px;height:26px;}
+    .ob-ht{font-family:'Cormorant Garamond',serif;color:var(--gold);}
+    .ob-ht b{font-size:16px;font-weight:600;letter-spacing:0.16em;display:block;line-height:1.1;}
+    .ob-ht small{font-size:9px;letter-spacing:0.22em;color:var(--golm);display:block;}
+    .ob-body{flex:1;overflow-y:auto;padding:32px 24px 24px;}
+    .ob-step{display:none;flex-direction:column;animation:fadeUp 0.4s ease forwards;}
+    .ob-step.active{display:flex;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .ob-num{font-size:11px;font-weight:500;letter-spacing:0.14em;color:var(--golm);text-transform:uppercase;margin-bottom:10px;}
+    .ob-q{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--g);line-height:1.2;margin-bottom:8px;}
+    .ob-sub{font-size:13px;color:var(--txm);margin-bottom:28px;line-height:1.5;}
+    .ob-opts{display:flex;flex-direction:column;gap:10px;}
+    .ob-opt{padding:16px 20px;border-radius:14px;border:1.5px solid var(--bd);background:#fff;cursor:pointer;transition:all 0.18s;display:flex;align-items:center;gap:14px;}
+    .ob-opt:hover{border-color:var(--bds);background:var(--cr);}
+    .ob-opt.sel{border-color:var(--g);background:rgba(13,74,62,0.05);}
+    .ob-opt-icon{width:40px;height:40px;border-radius:10px;background:var(--g);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px;}
+    .ob-opt-text strong{display:block;font-size:14px;font-weight:500;color:var(--tx);}
+    .ob-opt-text span{font-size:12px;color:var(--txm);}
+    .ob-opts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .ob-opt-sm{padding:14px;border-radius:12px;border:1.5px solid var(--bd);background:#fff;cursor:pointer;transition:all 0.18s;text-align:center;}
+    .ob-opt-sm:hover{border-color:var(--bds);}
+    .ob-opt-sm.sel{border-color:var(--g);background:rgba(13,74,62,0.05);}
+    .ob-opt-sm .oi{font-size:22px;margin-bottom:6px;}
+    .ob-opt-sm strong{display:block;font-size:13px;font-weight:500;color:var(--tx);}
+    .ob-footer{padding:16px 24px 40px;}
+    .ob-progress{display:flex;gap:6px;margin-bottom:16px;}
+    .ob-dot{height:3px;border-radius:2px;background:var(--crd);transition:all 0.3s;flex:1;}
+    .ob-dot.active{background:var(--g);}
+    .ob-dot.done{background:var(--golm);}
+    .ob-btn{width:100%;padding:15px;border-radius:12px;background:var(--g);color:var(--gold);border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;letter-spacing:0.08em;cursor:pointer;transition:background 0.15s;}
+    .ob-btn:hover{background:var(--gl);}
+    .ob-btn:disabled{opacity:0.35;cursor:not-allowed;}
+    #app{position:fixed;inset:0;z-index:1;display:flex;flex-direction:column;opacity:0;transition:opacity 0.5s;}
+    #app.in{opacity:1;}
+    #topbar{position:absolute;top:0;left:0;right:0;z-index:100;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;pointer-events:none;}
+    .top-logo{display:flex;align-items:center;gap:8px;background:var(--g);border-radius:20px;padding:8px 14px 8px 10px;box-shadow:var(--shadow-lg);pointer-events:all;border:1px solid rgba(201,169,110,0.2);}
+    .top-logo svg{width:22px;height:22px;}
+    .top-logo-t{font-family:'Cormorant Garamond',serif;color:var(--gold);}
+    .top-logo-t b{font-size:14px;font-weight:600;letter-spacing:0.14em;display:block;line-height:1;}
+    .top-logo-t small{font-size:9px;letter-spacing:0.18em;color:var(--golm);display:block;}
+    .top-actions{display:flex;gap:8px;pointer-events:all;}
+    .top-avatar{width:40px;height:40px;border-radius:50%;background:var(--g);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--gold);cursor:pointer;box-shadow:var(--shadow-lg);transition:transform 0.15s;}
+    .top-avatar:hover{transform:scale(1.05);}
+    #map{position:absolute;inset:0;z-index:1;}
+    .mapboxgl-ctrl-bottom-left,.mapboxgl-ctrl-bottom-right{display:none;}
+    .mapboxgl-ctrl-top-right{top:68px;right:12px;}
+    .mapboxgl-ctrl-group{box-shadow:var(--shadow)!important;border-radius:10px!important;overflow:hidden;}
+    .sm-pin{display:flex;flex-direction:column;align-items:center;cursor:pointer;filter:drop-shadow(0 3px 8px rgba(0,0,0,0.22));transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1);}
+    .sm-pin:hover{transform:scale(1.12) translateY(-2px);}
+    .sm-pin-bubble{background:var(--g);border:2px solid var(--gold);border-radius:20px;padding:5px 10px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:var(--gold);letter-spacing:0.04em;white-space:nowrap;}
+    .sm-pin-tail{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:7px solid var(--g);margin-top:-1px;}
+    .sm-pin.occupied .sm-pin-bubble{background:#eae6e0;border-color:#c8c0b0;color:#9a9590;}
+    .sm-pin.occupied .sm-pin-tail{border-top-color:#eae6e0;}
+    .sm-pin.sel .sm-pin-bubble{background:var(--gold);border-color:var(--gold);color:var(--g);}
+    .sm-pin.sel .sm-pin-tail{border-top-color:var(--gold);}
+    #tip{position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:50;background:#fff;border-radius:20px;padding:10px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-lg);border:1px solid rgba(0,0,0,0.06);max-width:calc(100% - 32px);animation:tipIn 0.4s cubic-bezier(0.34,1.56,0.64,1);transition:opacity 0.3s;}
+    @keyframes tipIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    #tip.fade{opacity:0;}
+    .tip-icon{font-size:16px;flex-shrink:0;}
+    .tip-text{font-size:12px;color:var(--tx);line-height:1.4;}
+    .tip-text strong{font-weight:500;color:var(--g);}
+    .tip-x{background:none;border:none;color:var(--txl);font-size:18px;cursor:pointer;padding:0 0 0 4px;flex-shrink:0;line-height:1;}
+    #chips{position:absolute;bottom:210px;left:0;right:0;z-index:50;display:flex;gap:8px;padding:0 16px;overflow-x:auto;scrollbar-width:none;}
+    #chips::-webkit-scrollbar{display:none;}
+    .chip{flex-shrink:0;padding:8px 16px;border-radius:20px;background:#fff;border:1px solid rgba(0,0,0,0.08);font-size:12px;font-weight:500;color:var(--tx);cursor:pointer;transition:all 0.15s;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.07);}
+    .chip.active{background:var(--g);color:var(--gold);border-color:var(--g);}
+    .chip:hover:not(.active){background:var(--cr);}
+    #sheet{position:absolute;left:0;right:0;bottom:0;z-index:200;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -4px 40px rgba(0,0,0,0.12);transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);max-height:82vh;overflow-y:auto;}
+    #sheet.peek{transform:translateY(calc(100% - 80px));}
+    #sheet.open{transform:translateY(0);}
+    .sh-handle{width:36px;height:4px;border-radius:2px;background:#e0dbd4;margin:12px auto 0;}
+    .sh-peek{padding:12px 20px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+    .sh-peek-l{display:flex;align-items:center;gap:10px;}
+    .sh-peek-icon{width:36px;height:36px;border-radius:10px;background:var(--g);display:flex;align-items:center;justify-content:center;}
+    .sh-peek-icon svg{width:18px;height:18px;}
+    .sh-peek-name{font-size:14px;font-weight:500;color:var(--tx);}
+    .sh-peek-sub{font-size:12px;color:var(--txm);}
+    .sh-avail{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--g);}
+    .sh-body{padding:4px 20px 40px;}
+    .live-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(42,157,111,0.1);border:1px solid rgba(42,157,111,0.25);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;color:#1a7a4a;margin-bottom:18px;}
+    .live-dot{width:6px;height:6px;border-radius:50%;background:#2a9d6f;animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    .pzona{font-size:10px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:var(--golm);margin-bottom:4px;}
+    .pnombre{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--g);line-height:1.15;margin-bottom:4px;}
+    .pdir{font-size:13px;color:var(--txm);margin-bottom:20px;}
+    .pattrs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;}
+    .acard{background:var(--cr);border-radius:12px;padding:12px 14px;border:1px solid var(--bd);}
+    .alabel{font-size:10px;letter-spacing:0.1em;color:var(--txm);text-transform:uppercase;margin-bottom:4px;}
+    .avalue{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--g);font-weight:600;line-height:1;}
+    .aunit{font-size:11px;color:var(--txm);margin-left:2px;}
+    .ptags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:22px;}
+    .ptag{font-size:11px;padding:4px 11px;border-radius:20px;background:rgba(13,74,62,0.07);border:1px solid rgba(13,74,62,0.12);color:var(--g);}
+    .res-btn{width:100%;padding:16px;border-radius:14px;background:var(--g);color:var(--gold);border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;letter-spacing:0.08em;cursor:pointer;transition:background 0.15s;}
+    .res-btn:hover:not(:disabled){background:var(--gl);}
+    .res-btn:disabled{opacity:0.4;cursor:not-allowed;}
+    .lhint{font-size:13px;color:var(--txm);text-align:center;padding:4px 0;}
+    .lhint a{color:var(--g);cursor:pointer;font-weight:500;text-decoration:underline;}
+    #confirm{position:absolute;inset:0;z-index:500;background:rgba(9,46,39,0.94);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+    #confirm.show{opacity:1;pointer-events:all;}
+    .conf-check{width:80px;height:80px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;margin-bottom:24px;animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);}
+    @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+    .conf-check svg{width:36px;height:36px;}
+    .conf-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:var(--gold);margin-bottom:10px;}
+    .conf-sub{font-size:14px;color:rgba(201,169,110,0.7);line-height:1.6;margin-bottom:32px;}
+    .conf-back{padding:14px 32px;border-radius:12px;background:rgba(201,169,110,0.12);border:1px solid var(--bds);color:var(--gold);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
+    #profile{position:absolute;inset:0;z-index:300;background:var(--cr);transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;}
+    #profile.open{transform:translateX(0);}
+    .prof-header{background:var(--g);padding:56px 24px 28px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+    .prof-av{width:72px;height:72px;border-radius:50%;background:rgba(201,169,110,0.15);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--gold);}
+    .prof-name{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold);}
+    .prof-email{font-size:12px;color:var(--golm);}
+    .prof-role{background:rgba(201,169,110,0.12);border:1px solid var(--bds);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);}
+    .prof-body{padding:24px;}
+    .prof-sec-title{font-size:10px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:var(--golm);margin-bottom:12px;}
+    .prof-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+    .stat-card{background:var(--g);border-radius:14px;padding:16px;text-align:center;}
+    .stat-v{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--gold);line-height:1;}
+    .stat-l{font-size:11px;color:rgba(201,169,110,0.5);margin-top:4px;letter-spacing:0.06em;}
+    .prof-card{background:#fff;border-radius:14px;border:1px solid var(--bd);overflow:hidden;margin-bottom:24px;}
+    .prof-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(201,169,110,0.1);}
+    .prof-row:last-child{border-bottom:none;}
+    .prof-row-l{display:flex;align-items:center;gap:12px;}
+    .prof-row-icon{width:32px;height:32px;border-radius:8px;background:rgba(13,74,62,0.07);display:flex;align-items:center;justify-content:center;}
+    .prof-row-label{font-size:13px;font-weight:500;color:var(--tx);}
+    .prof-row-val{font-size:12px;color:var(--txm);max-width:160px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .prof-close{position:absolute;top:16px;left:16px;width:36px;height:36px;border-radius:50%;background:rgba(201,169,110,0.15);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+    .prof-close svg{width:18px;height:18px;}
+    .logout-btn{width:100%;padding:14px;border-radius:12px;background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.2);color:#c0392b;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;}
+    #auth-bg{position:absolute;inset:0;z-index:399;background:rgba(0,0,0,0.3);opacity:0;pointer-events:none;transition:opacity 0.3s;}
+    #auth-bg.show{opacity:1;pointer-events:all;}
+    #auth{position:absolute;left:0;right:0;bottom:0;z-index:400;background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -4px 40px rgba(0,0,0,0.2);padding:0 24px 40px;transform:translateY(100%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);max-height:92vh;overflow-y:auto;}
+    #auth.open{transform:translateY(0);}
+    .auth-handle{width:36px;height:4px;border-radius:2px;background:#e0dbd4;margin:12px auto 20px;}
+    .auth-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--g);margin-bottom:6px;}
+    .auth-sub{font-size:13px;color:var(--txm);margin-bottom:22px;line-height:1.5;}
+    .auth-tabs{display:flex;margin-bottom:20px;border-bottom:2px solid #f0ebe3;}
+    .auth-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;color:var(--txm);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all 0.15s;}
     .auth-tab.active{color:var(--g);border-color:var(--g);}
-    .form-group{margin-bottom:13px;}
-    .form-label{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--txm);display:block;margin-bottom:5px;}
-    .form-input,.form-select{width:100%;padding:10px 13px;border:1px solid var(--bds);border-radius:8px;font-size:13px;color:var(--tx);background:#fff;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.15s;appearance:none;}
-    .form-input:focus,.form-select:focus{border-color:var(--g);}
-    .form-input::placeholder{color:#bbb;}
-    .role-toggle{display:flex;gap:8px;margin-bottom:13px;}
-    .role-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--bds);background:transparent;font-size:12px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txm);transition:all 0.15s;}
-    .role-btn.active-conductor{background:var(--g);color:var(--gold);border-color:var(--g);}
-    .role-btn.active-propietario{background:var(--gold);color:var(--g);border-color:var(--gold);}
-    .form-divider{display:flex;align-items:center;gap:10px;margin:14px 0;}
-    .form-divider span{font-size:11px;color:var(--txm);white-space:nowrap;letter-spacing:0.06em;}
-    .form-divider::before,.form-divider::after{content:'';flex:1;height:1px;background:var(--bd);}
-    .msg-error{font-size:12px;color:#c0392b;background:#fdf0ef;border:1px solid #f5c6c2;border-radius:6px;padding:8px 12px;margin-bottom:13px;display:none;}
-    .msg-error.show{display:block;}
-    .msg-ok{font-size:13px;color:#1a7a4a;background:#edfaf3;border:1px solid #a3e6c4;border-radius:6px;padding:10px 14px;margin-top:13px;display:none;text-align:center;line-height:1.5;}
-    .msg-ok.show{display:block;}
-    #confirm-view{align-items:center;text-align:center;padding-top:48px;}
-    .confirm-icon{width:68px;height:68px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:22px;border:2px solid rgba(201,169,110,0.3);}
-    .confirm-icon svg{width:30px;height:30px;}
-    .confirm-back{font-size:12px;color:var(--golm);cursor:pointer;letter-spacing:0.06em;text-decoration:underline;margin-top:8px;}
-    #filters{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:500;background:var(--g);border:1px solid rgba(201,169,110,0.3);border-radius:40px;padding:7px 10px;display:flex;gap:4px;box-shadow:0 4px 24px rgba(0,0,0,0.35);}
-    .filt-btn{font-size:11px;font-weight:500;padding:6px 14px;border-radius:30px;border:1px solid transparent;background:transparent;color:rgba(201,169,110,0.5);cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.05em;transition:all 0.15s;}
-    .filt-btn.active{background:var(--gold);color:var(--g);}
-    .filt-btn:hover:not(.active){color:var(--gold);}
-    #loading{position:fixed;inset:0;z-index:9000;background:var(--g);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity 0.5s;}
-    #loading.hidden{opacity:0;pointer-events:none;}
-    #loading svg{width:52px;height:52px;}
-    #loading p{font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:0.24em;color:var(--golm);text-transform:uppercase;}
-    #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--g);border:1px solid var(--bds);color:var(--goll);padding:10px 22px;border-radius:8px;font-size:12px;font-weight:500;letter-spacing:0.06em;z-index:2000;opacity:0;transition:opacity 0.25s,transform 0.25s;white-space:nowrap;pointer-events:none;}
+    .fg{margin-bottom:12px;}
+    .fl{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--txm);display:block;margin-bottom:5px;}
+    .fi,.fs{width:100%;padding:12px 14px;border:1.5px solid #e8e3dc;border-radius:10px;font-size:14px;color:var(--tx);background:#fafaf8;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.15s;appearance:none;}
+    .fi:focus,.fs:focus{border-color:var(--g);background:#fff;}
+    .fi::placeholder{color:#bbb;}
+    .role-tog{display:flex;gap:8px;margin-bottom:14px;}
+    .role-b{flex:1;padding:10px;border-radius:10px;border:1.5px solid #e8e3dc;background:transparent;font-size:12px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;color:var(--txm);}
+    .role-b.ac{background:var(--g);color:var(--gold);border-color:var(--g);}
+    .role-b.ap{background:var(--gold);color:var(--g);border-color:var(--gold);}
+    .fdiv{display:flex;align-items:center;gap:10px;margin:12px 0;}
+    .fdiv span{font-size:11px;color:var(--txm);white-space:nowrap;}
+    .fdiv::before,.fdiv::after{content:'';flex:1;height:1px;background:#e8e3dc;}
+    .auth-btn{width:100%;padding:14px;border-radius:12px;background:var(--g);color:var(--gold);border:none;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;letter-spacing:0.08em;cursor:pointer;transition:background 0.15s;margin-top:4px;}
+    .auth-btn:hover:not(:disabled){background:var(--gl);}
+    .auth-btn:disabled{opacity:0.45;cursor:not-allowed;}
+    .merr{font-size:12px;color:#c0392b;background:#fdf0ef;border:1px solid #f5c6c2;border-radius:8px;padding:10px 14px;margin-bottom:12px;display:none;}
+    .merr.show{display:block;}
+    .mok{font-size:13px;color:#1a7a4a;background:#edfaf3;border:1px solid #a3e6c4;border-radius:8px;padding:10px 14px;margin-top:12px;display:none;text-align:center;line-height:1.5;}
+    .mok.show{display:block;}
+    #toast{position:absolute;bottom:100px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--g);border:1px solid var(--bds);color:var(--goll);padding:10px 22px;border-radius:10px;font-size:13px;font-weight:500;z-index:600;opacity:0;transition:opacity 0.25s,transform 0.25s;white-space:nowrap;pointer-events:none;}
     #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-    .leaflet-popup-content-wrapper{background:var(--g)!important;border:1px solid var(--bds)!important;border-radius:10px!important;box-shadow:0 4px 16px rgba(0,0,0,0.3)!important;padding:0!important;}
-    .leaflet-popup-content{margin:11px 14px!important;font-family:'DM Sans',sans-serif!important;color:var(--gold)!important;font-size:12px!important;}
-    .leaflet-popup-tip{background:var(--g)!important;}
-    .leaflet-popup-close-button{color:var(--golm)!important;top:5px!important;right:8px!important;}
-    @media(max-width:600px){#panel{width:100%;}}
+    @media(max-width:380px){.pattrs{grid-template-columns:1fr 1fr;}.acard:last-child{grid-column:span 2;}}
   </style>
 </head>
 <body>
-
-<div id="loading">
-  <svg viewBox="0 0 52 52" fill="none">
-    <path d="M37 14C34 11.5 30 11 26 12C20 13.5 16.5 19 18 24C19 28 23 30 27 31.5C32 33.5 35 36.5 33.5 41C32 45 27 46.5 23 45.5C20.5 44.7 18.5 43 17.5 41" stroke="#C9A96E" stroke-width="3" stroke-linecap="round"/>
-  </svg>
-  <p>Cargando plazas</p>
-</div>
-
-<header id="topbar">
-  <a class="logo" href="#">
-    <svg viewBox="0 0 30 30" fill="none"><path d="M21 9C19 7.5 16.5 7 14 7.5C10 8.5 7.5 12 8.5 15.5C9.2 18.2 12 19.5 14.5 20.5C17.5 21.7 19.5 23.5 18.5 26.5C17.5 29 14 30 11 29C9 28.4 7.5 27 7 25.5" stroke="#C9A96E" stroke-width="2.2" stroke-linecap="round"/></svg>
-    <div class="logo-text"><b>STRABE</b><small>MOTION</small></div>
-  </a>
-  <div id="user-area">
-    <span id="user-name" style="display:none"></span>
-    <button id="logout-btn" style="display:none" onclick="logout()">Salir</button>
-    <button id="auth-btn" onclick="openAuth()">Entrar</button>
+<div id="splash">
+  <div class="splash-logo">
+    <div class="splash-s"><svg viewBox="0 0 64 64" fill="none"><path d="M46 18C41 14 35 13 29 14.5C20 17 15 25 17.5 33C19.5 39 25.5 42 31 44C38 46.5 42 51 40 57C38 62 31 64 25 62C21 60.5 18 58 17 55" stroke="#C9A96E" stroke-width="4" stroke-linecap="round"/></svg></div>
+    <div class="splash-wordmark"><span class="sw-main">STRABE</span><span class="sw-sub">MOTION</span></div>
   </div>
-</header>
-
-<div id="map"></div>
-
-<div id="filters">
-  <button class="filt-btn active" onclick="filterZona('todas',this)">Todas</button>
-  <button class="filt-btn" onclick="filterZona('Abando',this)">Abando</button>
-  <button class="filt-btn" onclick="filterZona('Deusto',this)">Deusto</button>
-  <button class="filt-btn" onclick="filterZona('Casco Viejo',this)">Casco Viejo</button>
-  <button class="filt-btn" onclick="filterZona('Santutxu',this)">Santutxu</button>
+  <div class="splash-tagline">El Airbnb de las plazas de garaje</div>
+  <div class="splash-loader"><div class="splash-loader-fill"></div></div>
 </div>
-
-<div id="panel">
-  <button class="panel-close" onclick="closePanel()">×</button>
-
-  <!-- DETAIL -->
-  <div id="detail-view" class="view">
-    <div class="plaza-zona" id="d-zona"></div>
-    <div class="plaza-nombre" id="d-nombre"></div>
-    <div class="plaza-dir" id="d-dir"></div>
-    <div class="plaza-attrs">
-      <div class="attr-card"><div class="attr-label">Precio / hora</div><div class="attr-value" id="d-precio"></div></div>
-      <div class="attr-card"><div class="attr-label">Estado</div><div class="attr-value" id="d-disp" style="font-size:15px;padding-top:6px;line-height:1.3"></div></div>
+<div id="onboarding">
+  <div class="ob-header">
+    <svg viewBox="0 0 26 26" fill="none"><path d="M18 8C16 6.5 13.5 6 11 6.5C7 7.5 4.5 11 5.5 14.5C6.2 17.2 9 18.5 11.5 19.5C14.5 20.7 16.5 22.5 15.5 25.5" stroke="#C9A96E" stroke-width="2" stroke-linecap="round"/></svg>
+    <div class="ob-ht"><b>STRABE</b><small>MOTION</small></div>
+  </div>
+  <div class="ob-body">
+    <div class="ob-step active" id="obs1">
+      <div class="ob-num">Paso 1 de 2</div>
+      <div class="ob-q">En que zona de Bilbao aparcar mas?</div>
+      <div class="ob-sub">Te mostraremos las plazas mas cercanas a ti.</div>
+      <div class="ob-opts">
+        <div class="ob-opt" onclick="selOb('zona','Abando',this)"><div class="ob-opt-icon">🏙️</div><div class="ob-opt-text"><strong>Abando</strong><span>Centro, Gran Via, Guggenheim</span></div></div>
+        <div class="ob-opt" onclick="selOb('zona','Deusto',this)"><div class="ob-opt-icon">🎓</div><div class="ob-opt-text"><strong>Deusto</strong><span>Universidad, Abandoibarra</span></div></div>
+        <div class="ob-opt" onclick="selOb('zona','Casco Viejo',this)"><div class="ob-opt-icon">⚓</div><div class="ob-opt-text"><strong>Casco Viejo</strong><span>Siete Calles, Mercado</span></div></div>
+        <div class="ob-opt" onclick="selOb('zona','Santutxu',this)"><div class="ob-opt-icon">🏘️</div><div class="ob-opt-text"><strong>Santutxu / Basurto</strong><span>Zona residencial</span></div></div>
+      </div>
     </div>
-    <div class="plaza-tags" id="d-tags"></div>
-    <button class="primary-btn" id="reservar-btn" onclick="handleReservar()">Reservar esta plaza</button>
-    <div class="login-hint" id="login-hint" style="display:none"><a onclick="openAuth()">Inicia sesión</a> para reservar</div>
+    <div class="ob-step" id="obs2">
+      <div class="ob-num">Paso 2 de 2</div>
+      <div class="ob-q">Como nos has conocido?</div>
+      <div class="ob-sub">Nos ayuda a llegar a mas conductores.</div>
+      <div class="ob-opts-grid">
+        <div class="ob-opt-sm" onclick="selOb('fuente','Redes sociales',this)"><div class="oi">📱</div><strong>Redes sociales</strong></div>
+        <div class="ob-opt-sm" onclick="selOb('fuente','Un amigo',this)"><div class="oi">👥</div><strong>Un amigo</strong></div>
+        <div class="ob-opt-sm" onclick="selOb('fuente','Otro',this)"><div class="oi">✨</div><strong>Otro</strong></div>
+      </div>
+    </div>
   </div>
-
-  <!-- LOGIN -->
-  <div id="login-view" class="view">
-    <div class="view-title" id="auth-title">Bienvenido</div>
-    <div class="view-sub">Accede para reservar plazas en Bilbao</div>
+  <div class="ob-footer">
+    <div class="ob-progress"><div class="ob-dot active" id="obd1"></div><div class="ob-dot" id="obd2"></div></div>
+    <button class="ob-btn" id="ob-btn" onclick="obNext()" disabled>Continuar</button>
+  </div>
+</div>
+<div id="app">
+  <div id="map"></div>
+  <div id="topbar">
+    <div class="top-logo">
+      <svg viewBox="0 0 22 22" fill="none"><path d="M16 6.5C14.5 5.5 12.5 5 10.5 5.5C7.5 6.5 5.5 9.5 6.5 12.5C7.2 14.8 9.5 15.8 11.5 16.5C14 17.5 15.5 19.5 14.5 22" stroke="#C9A96E" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div class="top-logo-t"><b>STRABE</b><small>MOTION</small></div>
+    </div>
+    <div class="top-actions">
+      <div class="top-avatar" id="av-btn" onclick="avatarClick()">?</div>
+    </div>
+  </div>
+  <div id="tip">
+    <span class="tip-icon">💡</span>
+    <span class="tip-text" id="tip-txt">Toca una plaza para ver precio y disponibilidad</span>
+    <button class="tip-x" onclick="closeTip()">x</button>
+  </div>
+  <div id="chips">
+    <div class="chip active" onclick="doChip('todas',this)">Todas</div>
+    <div class="chip" onclick="doChip('Abando',this)">Abando</div>
+    <div class="chip" onclick="doChip('Deusto',this)">Deusto</div>
+    <div class="chip" onclick="doChip('Casco Viejo',this)">Casco Viejo</div>
+    <div class="chip" onclick="doChip('Santutxu',this)">Santutxu</div>
+    <div class="chip" onclick="doChip('libre',this)">Libres</div>
+  </div>
+  <div id="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-peek" onclick="toggleSheet()">
+      <div class="sh-peek-l">
+        <div class="sh-peek-icon"><svg viewBox="0 0 18 18" fill="none"><path d="M9 2C6.2 2 4 4.2 4 7C4 11 9 16 9 16S14 11 14 7C14 4.2 11.8 2 9 2ZM9 9C7.9 9 7 8.1 7 7S7.9 5 9 5 11 5.9 11 7 10.1 9 9 9Z" fill="#C9A96E"/></svg></div>
+        <div><div class="sh-peek-name" id="sh-name">Plazas en Bilbao</div><div class="sh-peek-sub" id="sh-sub">Explora el mapa</div></div>
+      </div>
+      <div class="sh-avail" id="sh-avail">...</div>
+    </div>
+    <div class="sh-body" id="sh-body" style="display:none">
+      <div class="live-badge"><span class="live-dot"></span>Disponibilidad en tiempo real</div>
+      <div class="pzona" id="d-zona"></div>
+      <div class="pnombre" id="d-nombre"></div>
+      <div class="pdir" id="d-dir"></div>
+      <div class="pattrs">
+        <div class="acard"><div class="alabel">Por hora</div><div class="avalue" id="d-precio"></div></div>
+        <div class="acard"><div class="alabel">Estado</div><div class="avalue" id="d-disp" style="font-size:14px;padding-top:4px;line-height:1.3"></div></div>
+        <div class="acard"><div class="alabel">Zona</div><div class="avalue" id="d-zona2" style="font-size:14px;padding-top:4px;line-height:1.3"></div></div>
+      </div>
+      <div class="ptags" id="d-tags"></div>
+      <button class="res-btn" id="res-btn" onclick="doReservar()">Reservar esta plaza</button>
+      <div class="lhint" id="lhint" style="display:none"><a onclick="openAuth()">Inicia sesion</a> para reservar</div>
+    </div>
+  </div>
+  <div id="confirm">
+    <div class="conf-check"><svg viewBox="0 0 36 36" fill="none"><path d="M7 18l7 7L29 10" stroke="#0D4A3E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="conf-title">Plaza reservada!</div>
+    <div class="conf-sub" id="conf-msg"></div>
+    <button class="conf-back" onclick="closeConfirm()">Volver al mapa</button>
+  </div>
+  <div id="profile">
+    <button class="prof-close" onclick="closeProfile()"><svg viewBox="0 0 18 18" fill="none"><path d="M14 4L4 14M4 4l10 10" stroke="#C9A96E" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+    <div class="prof-header">
+      <div class="prof-av" id="pav">?</div>
+      <div class="prof-name" id="pname">-</div>
+      <div class="prof-email" id="pemail">-</div>
+      <div class="prof-role" id="prole">Conductor</div>
+    </div>
+    <div class="prof-body">
+      <div class="prof-stats">
+        <div class="stat-card"><div class="stat-v" id="p-res">0</div><div class="stat-l">Reservas</div></div>
+        <div class="stat-card"><div class="stat-v" id="p-zon" style="font-size:18px;padding-top:4px">-</div><div class="stat-l">Zona</div></div>
+      </div>
+      <div class="prof-sec-title">Informacion</div>
+      <div class="prof-card">
+        <div class="prof-row"><div class="prof-row-l"><div class="prof-row-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 8C9.66 8 11 6.66 11 5S9.66 2 8 2 5 3.34 5 5s1.34 3 3 3zm0 1.5C5.33 9.5 2 10.83 2 12.5V14h12v-1.5C14 10.83 10.67 9.5 8 9.5z" fill="#0D4A3E"/></svg></div><span class="prof-row-label">Nombre</span></div><span class="prof-row-val" id="pr-name">-</span></div>
+        <div class="prof-row"><div class="prof-row-l"><div class="prof-row-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13 3H3C2.45 3 2 3.45 2 4v8c0 .55.45 1 1 1h10c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zm0 2L8 8.5 3 5V4l5 3.5L13 4v1z" fill="#0D4A3E"/></svg></div><span class="prof-row-label">Email</span></div><span class="prof-row-val" id="pr-email">-</span></div>
+        <div class="prof-row"><div class="prof-row-l"><div class="prof-row-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2C5.24 2 3 4.24 3 7c0 4 5 7 5 7s5-3 5-7c0-2.76-2.24-5-5-5zm0 6.5A1.5 1.5 0 118 5a1.5 1.5 0 010 3.5z" fill="#0D4A3E"/></svg></div><span class="prof-row-label">Zona</span></div><span class="prof-row-val" id="pr-zona">-</span></div>
+        <div class="prof-row"><div class="prof-row-l"><div class="prof-row-icon"><svg viewBox="0 0 16 16" fill="none"><path d="M13 10.5c-.75 0-1.47-.12-2.14-.35a.5.5 0 00-.49.12l-1.1 1.43C7.38 10.88 5.11 8.63 4.27 6.86L5.68 5.74a.5.5 0 00.12-.49A6.8 6.8 0 015.5 2.97c0-.39-.33-.72-.72-.72H2.47c-.39 0-.72.33-.72.72C1.75 8.97 6.53 13.75 12.53 13.75c.39 0 .72-.33.72-.72v-1.81c0-.39-.22-.72-.25-.72z" fill="#0D4A3E"/></svg></div><span class="prof-row-label">Telefono</span></div><span class="prof-row-val" id="pr-phone">-</span></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Cerrar sesion</button>
+    </div>
+  </div>
+  <div id="auth-bg" onclick="closeAuth()"></div>
+  <div id="auth">
+    <div class="auth-handle"></div>
+    <div class="auth-title" id="auth-title">Bienvenido</div>
+    <div class="auth-sub">Accede para reservar plazas en Bilbao</div>
     <div class="auth-tabs">
-      <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Entrar</div>
-      <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Registrarse</div>
+      <div class="auth-tab active" id="tab-l" onclick="switchTab('l')">Entrar</div>
+      <div class="auth-tab" id="tab-r" onclick="switchTab('r')">Registrarse</div>
     </div>
-
-    <div id="login-form">
-      <div class="msg-error" id="login-error"></div>
-      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="l-email" type="email" placeholder="tu@email.com" autocomplete="email"></div>
-      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" id="l-pass" type="password" placeholder="••••••••"></div>
-      <button class="primary-btn" id="login-btn" onclick="doLogin()" style="margin-top:4px">Entrar</button>
+    <div id="lform">
+      <div class="merr" id="lerr"></div>
+      <div class="fg"><label class="fl">Email</label><input class="fi" id="le" type="email" placeholder="tu@email.com" autocomplete="email"></div>
+      <div class="fg"><label class="fl">Contrasena</label><input class="fi" id="lp" type="password" placeholder="..."></div>
+      <button class="auth-btn" id="lbtn" onclick="doLogin()">Entrar</button>
     </div>
-
-    <div id="register-form" style="display:none">
-      <div class="msg-error" id="reg-error"></div>
-      <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-input" id="r-name" type="text" placeholder="Iker Madariaga" autocomplete="name"></div>
-      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="r-email" type="email" placeholder="tu@email.com" autocomplete="email"></div>
-      <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="r-phone" type="tel" placeholder="+34 600 000 000"></div>
-      <div class="form-group">
-        <label class="form-label">Zona de Bilbao</label>
-        <select class="form-select" id="r-zona">
-          <option value="">Seleccionar zona</option>
-          <option>Abando</option><option>Deusto</option><option>Santutxu</option><option>Basurto</option><option>Casco Viejo</option>
-        </select>
-      </div>
-      <div class="form-divider"><span>Soy</span></div>
-      <div class="role-toggle">
-        <button class="role-btn active-conductor" id="rb-conductor" onclick="setRole('conductor')">Conductor</button>
-        <button class="role-btn" id="rb-propietario" onclick="setRole('propietario')">Propietario</button>
-      </div>
-      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" id="r-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
-      <button class="primary-btn" id="reg-btn" onclick="doRegister()" style="margin-top:4px">Crear cuenta</button>
-      <div class="msg-ok" id="reg-ok"></div>
+    <div id="rform" style="display:none">
+      <div class="merr" id="rerr"></div>
+      <div class="fg"><label class="fl">Nombre completo</label><input class="fi" id="rn" type="text" placeholder="Iker Madariaga"></div>
+      <div class="fg"><label class="fl">Email</label><input class="fi" id="re" type="email" placeholder="tu@email.com"></div>
+      <div class="fg"><label class="fl">Telefono</label><input class="fi" id="rp" type="tel" placeholder="+34 600 000 000"></div>
+      <div class="fg"><label class="fl">Zona</label><select class="fs" id="rz"><option value="">Seleccionar zona</option><option>Abando</option><option>Deusto</option><option>Santutxu</option><option>Basurto</option><option>Casco Viejo</option></select></div>
+      <div class="fdiv"><span>Soy</span></div>
+      <div class="role-tog"><button class="role-b ac" id="rbc" onclick="setRole('c')">Conductor</button><button class="role-b" id="rbp" onclick="setRole('p')">Propietario</button></div>
+      <div class="fg"><label class="fl">Contrasena</label><input class="fi" id="rpass" type="password" placeholder="Minimo 6 caracteres"></div>
+      <button class="auth-btn" id="rbtn" onclick="doReg()">Crear cuenta</button>
+      <div class="mok" id="rok"></div>
     </div>
-  </div>
-
-  <!-- CONFIRM -->
-  <div id="confirm-view" class="view">
-    <div class="confirm-icon"><svg viewBox="0 0 30 30" fill="none"><path d="M6 15l6 6L24 9" stroke="#C9A96E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    <div class="view-title" style="margin-bottom:10px">¡Plaza reservada!</div>
-    <div class="view-sub" id="confirm-msg" style="margin-bottom:28px"></div>
-    <span class="confirm-back" onclick="closePanel()">← Volver al mapa</span>
   </div>
 </div>
-
 <div id="toast"></div>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-const sb = supabase.createClient(
-  'https://ubtyudgctlxozrjcibqm.supabase.co',
-  'sb_publishable_EXd56lcvdd0ogbe-hwmrQw_sVwNHNH8'
-);
-
-const DEMO = [
-  {id:1, nombre:"Plaza Moyúa",       direccion:"Pza. Moyúa 3",             zona:"Abando",      lat:43.2637,lng:-2.9353,precio_hora:1.5,disponible:true, tags:["Cubierta","24h","Acceso fácil"]},
-  {id:2, nombre:"Garaje Alameda",    direccion:"Alameda de Recalde 18",    zona:"Abando",      lat:43.2618,lng:-2.9330,precio_hora:1.2,disponible:true, tags:["Cubierta","Altura 2.1m"]},
-  {id:3, nombre:"Plaza Indautxu",    direccion:"C/ Autonomía 22",          zona:"Abando",      lat:43.2608,lng:-2.9392,precio_hora:1.0,disponible:false,tags:["Descubierta","Vigilada"]},
-  {id:4, nombre:"Abandoibarra",      direccion:"Abandoibarra Etorbidea 4", zona:"Abando",      lat:43.2672,lng:-2.9380,precio_hora:1.8,disponible:true, tags:["Cubierta","Junto Guggenheim"]},
-  {id:5, nombre:"Garaje Deusto",     direccion:"C/ Henao 8",               zona:"Deusto",      lat:43.2720,lng:-2.9484,precio_hora:0.9,disponible:true, tags:["Cubierta","Moto OK"]},
-  {id:6, nombre:"Plaza Universidad", direccion:"Avda. Universidades 24",   zona:"Deusto",      lat:43.2698,lng:-2.9512,precio_hora:0.8,disponible:true, tags:["Descubierta","Fines de semana"]},
-  {id:7, nombre:"Siete Calles",      direccion:"C/ Correo 5",              zona:"Casco Viejo", lat:43.2570,lng:-2.9232,precio_hora:1.3,disponible:true, tags:["Cubierta","Centro histórico"]},
-  {id:8, nombre:"Plaza Atxuri",      direccion:"Pza. de la Encarnación 1", zona:"Casco Viejo", lat:43.2556,lng:-2.9198,precio_hora:1.0,disponible:true, tags:["Descubierta","Cerca estación"]},
-  {id:9, nombre:"Garaje Santutxu",   direccion:"C/ Iturribide 44",         zona:"Santutxu",    lat:43.2650,lng:-2.9130,precio_hora:0.7,disponible:true, tags:["Cubierta","Tranquilo"]},
-  {id:10,nombre:"Plaza Basurto",     direccion:"Avda. de los Fueros 12",   zona:"Basurto",     lat:43.2585,lng:-2.9450,precio_hora:0.8,disponible:false,tags:["Descubierta","Hospital cercano"]},
-];
-
-let currentUser=null, currentPlaza=null, allMarkers=[], roleSelected='conductor', map;
-
-window.addEventListener('load', async () => {
-  initMap();
-  await checkSession();
-  await loadPlazas();
-  setTimeout(()=>document.getElementById('loading').classList.add('hidden'),400);
-});
-
-function initMap() {
-  map = L.map('map',{center:[43.2630,-2.9350],zoom:14});
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-}
-
-async function loadPlazas() {
-  let plazas=DEMO;
-  try { const{data}=await sb.from('plazas').select('*'); if(data&&data.length)plazas=data; } catch(e){}
-  renderMarkers(plazas);
-}
-
-function renderMarkers(plazas) {
-  allMarkers.forEach(m=>map.removeLayer(m.marker)); allMarkers=[];
-  plazas.forEach(p=>{
-    const icon=L.divIcon({className:'',html:`<div class="sm-marker${!p.disponible?' occupied':''}"><span>${p.precio_hora?p.precio_hora.toFixed(1)+'€':'P'}</span></div>`,iconSize:[34,34],iconAnchor:[17,34]});
-    const marker=L.marker([p.lat,p.lng],{icon}).addTo(map);
-    marker.on('click',()=>openDetail(p));
-    allMarkers.push({marker,plaza:p});
-  });
-}
-
-function filterZona(zona,btn) {
-  document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
-  allMarkers.forEach(({marker,plaza})=>marker.setOpacity(zona==='todas'||plaza.zona===zona?1:0.15));
-}
-
-function showView(v) { document.querySelectorAll('.view').forEach(el=>el.classList.remove('active')); document.getElementById(v+'-view').classList.add('active'); }
-function openPanel() { document.getElementById('panel').classList.add('open'); }
-function closePanel(){ document.getElementById('panel').classList.remove('open'); currentPlaza=null; }
-
-function openDetail(plaza) {
-  currentPlaza=plaza;
-  document.getElementById('d-zona').textContent=plaza.zona;
-  document.getElementById('d-nombre').textContent=plaza.nombre;
-  document.getElementById('d-dir').textContent=plaza.direccion;
-  document.getElementById('d-precio').innerHTML=`${plaza.precio_hora}<span class="attr-unit">€/h</span>`;
-  const d=document.getElementById('d-disp');
-  d.textContent=plaza.disponible?'Disponible':'Ocupada'; d.style.color=plaza.disponible?'#2a9d6f':'#c0603a';
-  document.getElementById('d-tags').innerHTML=(plaza.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
-  const btn=document.getElementById('reservar-btn'), hint=document.getElementById('login-hint');
-  if(!plaza.disponible){btn.disabled=true;btn.textContent='No disponible';btn.style.display='block';hint.style.display='none';}
-  else if(!currentUser){btn.style.display='none';hint.style.display='block';}
-  else{btn.disabled=false;btn.textContent='Reservar esta plaza';btn.style.display='block';hint.style.display='none';}
-  showView('detail'); openPanel();
-  map.panTo([plaza.lat,plaza.lng],{animate:true,duration:0.5});
-}
-
-function openAuth(){ showView('login'); openPanel(); switchTab('login'); }
-
-function switchTab(mode) {
-  document.getElementById('tab-login').classList.toggle('active',mode==='login');
-  document.getElementById('tab-register').classList.toggle('active',mode==='register');
-  document.getElementById('login-form').style.display=mode==='login'?'block':'none';
-  document.getElementById('register-form').style.display=mode==='register'?'block':'none';
-  document.getElementById('auth-title').textContent=mode==='login'?'Bienvenido':'Crear cuenta';
-  document.getElementById('login-error').classList.remove('show');
-  document.getElementById('reg-error').classList.remove('show');
-}
-
-function setRole(r){
-  roleSelected=r;
-  document.getElementById('rb-conductor').className='role-btn'+(r==='conductor'?' active-conductor':'');
-  document.getElementById('rb-propietario').className='role-btn'+(r==='propietario'?' active-propietario':'');
-}
-
-async function doLogin(){
-  const email=document.getElementById('l-email').value.trim(), pass=document.getElementById('l-pass').value;
-  const btn=document.getElementById('login-btn'), err=document.getElementById('login-error');
-  err.classList.remove('show');
-  if(!email||!pass){showErr(err,'Rellena email y contraseña');return;}
-  btn.disabled=true; btn.textContent='Entrando...';
-  try{
-    const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
-    if(error)throw error;
-    currentUser=data.user; onLogin(data.user);
-  }catch(e){showErr(err,xlate(e.message));}
-  btn.disabled=false; btn.textContent='Entrar';
-}
-
-async function doRegister(){
-  const name=document.getElementById('r-name').value.trim();
-  const email=document.getElementById('r-email').value.trim();
-  const phone=document.getElementById('r-phone').value.trim();
-  const zona=document.getElementById('r-zona').value;
-  const pass=document.getElementById('r-pass').value;
-  const btn=document.getElementById('reg-btn'), err=document.getElementById('reg-error'), ok=document.getElementById('reg-ok');
-  err.classList.remove('show'); ok.classList.remove('show');
-  if(!name||!email||!phone||!zona||!pass){showErr(err,'Rellena todos los campos');return;}
-  if(pass.length<6){showErr(err,'Contraseña mínimo 6 caracteres');return;}
-  btn.disabled=true; btn.textContent='Creando cuenta...';
-  try{
-    // Paso 1: crear en Supabase Auth
-    const{data,error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
-    if(error)throw error;
-
-    // Paso 2: guardar perfil en tabla usuarios (sin pasar el ID — se genera automáticamente)
-    const{error:dbErr}=await sb.from('usuarios').insert({
-      nombre:name, email, telefono:phone, zona,
-      rol:roleSelected, estado:'nuevo',
-      created_at:new Date().toISOString()
-    });
-    if(dbErr)console.warn('Perfil no guardado:', dbErr.message);
-
-    ok.textContent='¡Cuenta creada! Revisa tu email para confirmarla y luego entra.';
-    ok.classList.add('show');
-  }catch(e){showErr(err,xlate(e.message));}
-  btn.disabled=false; btn.textContent='Crear cuenta';
-}
-
+const sb=supabase.createClient('https://ubtyudgctlxozrjcibqm.supabase.co','sb_publishable_EXd56lcvdd0ogbe-hwmrQw_sVwNHNH8');
+mapboxgl.accessToken='pk.eyJ1IjoibWVsa2FtdSIsImEiOiJjbW4ydzRsNGwxOW1sMnBwemc3bjQ2OXZxIn0.s0IagTJ90SxbqI5n6PXTAg';
+const DEMO=[{id:1,nombre:"Plaza Moyua",direccion:"Pza. Moyua 3",zona:"Abando",lat:43.2637,lng:-2.9353,precio_hora:1.5,disponible:true,tags:["Cubierta","24h","Acceso facil"]},{id:2,nombre:"Garaje Alameda",direccion:"Alameda de Recalde 18",zona:"Abando",lat:43.2618,lng:-2.9330,precio_hora:1.2,disponible:true,tags:["Cubierta","Altura 2.1m"]},{id:3,nombre:"Plaza Indautxu",direccion:"C/ Autonomia 22",zona:"Abando",lat:43.2608,lng:-2.9392,precio_hora:1.0,disponible:false,tags:["Descubierta","Vigilada"]},{id:4,nombre:"Abandoibarra",direccion:"Abandoibarra Etorbidea 4",zona:"Abando",lat:43.2672,lng:-2.9380,precio_hora:1.8,disponible:true,tags:["Cubierta","Junto Guggenheim"]},{id:5,nombre:"Garaje Deusto",direccion:"C/ Henao 8",zona:"Deusto",lat:43.2720,lng:-2.9484,precio_hora:0.9,disponible:true,tags:["Cubierta","Moto OK"]},{id:6,nombre:"Plaza Universidad",direccion:"Avda. Universidades 24",zona:"Deusto",lat:43.2698,lng:-2.9512,precio_hora:0.8,disponible:true,tags:["Descubierta","Fines de semana"]},{id:7,nombre:"Siete Calles",direccion:"C/ Correo 5",zona:"Casco Viejo",lat:43.2570,lng:-2.9232,precio_hora:1.3,disponible:true,tags:["Cubierta","Centro historico"]},{id:8,nombre:"Plaza Atxuri",direccion:"Pza. de la Encarnacion 1",zona:"Casco Viejo",lat:43.2556,lng:-2.9198,precio_hora:1.0,disponible:true,tags:["Descubierta","Cerca estacion"]},{id:9,nombre:"Garaje Santutxu",direccion:"C/ Iturribide 44",zona:"Santutxu",lat:43.2650,lng:-2.9130,precio_hora:0.7,disponible:true,tags:["Cubierta","Tranquilo"]},{id:10,nombre:"Plaza Basurto",direccion:"Avda. de los Fueros 12",zona:"Basurto",lat:43.2585,lng:-2.9450,precio_hora:0.8,disponible:false,tags:["Descubierta","Hospital cercano"]}];
+const TIPS=["Toca una plaza para ver precio y disponibilidad","Las burbujas doradas estan libres ahora mismo","Reservar tarda menos de 30 segundos","Abando tiene las plazas mas centricas","Acceso sin llave, todo desde el movil","Precio medio en Bilbao: 1.1 euro/hora","Desliza hacia arriba para ver mas detalles"];
+let user=null,userProf=null,curPlaza=null,plazas=[],mkrs={},map=null,obData={zona:null,fuente:null},obStep=1,rolesel='c',shState='hidden',tipIdx=0,tipT=null;
+window.addEventListener('load',async()=>{await checkSess();setTimeout(()=>{document.getElementById('splash').classList.add('out');setTimeout(async()=>{document.getElementById('splash').style.display='none';if(localStorage.getItem('sm_ob')){showApp();}else{document.getElementById('onboarding').classList.add('in');}},600);},2200);});
+function selOb(type,val,el){const cont=el.closest('.ob-opts,.ob-opts-grid');cont.querySelectorAll('.ob-opt,.ob-opt-sm').forEach(o=>o.classList.remove('sel'));el.classList.add('sel');obData[type]=val;document.getElementById('ob-btn').disabled=false;}
+function obNext(){if(obStep===1){if(!obData.zona)return;document.getElementById('obs1').classList.remove('active');document.getElementById('obs2').classList.add('active');document.getElementById('obd1').classList.remove('active');document.getElementById('obd1').classList.add('done');document.getElementById('obd2').classList.add('active');document.getElementById('ob-btn').disabled=true;document.getElementById('ob-btn').textContent='Ver plazas';obStep=2;}else{localStorage.setItem('sm_ob','1');localStorage.setItem('sm_ob_zona',obData.zona||'');localStorage.setItem('sm_ob_fuente',obData.fuente||'');if(user&&obData.zona)sb.from('usuarios').update({zona:obData.zona}).eq('email',user.email).then(()=>{});document.getElementById('onboarding').classList.add('out');setTimeout(()=>{document.getElementById('onboarding').style.display='none';showApp();},500);}}
+async function showApp(){document.getElementById('app').classList.add('in');initMap();await loadPlazas();startTips();subscribeRT();updateAv();setTimeout(()=>document.getElementById('sheet').classList.add('peek'),600);}
+function initMap(){map=new mapboxgl.Map({container:'map',style:'mapbox://styles/mapbox/light-v11',center:[-2.9350,43.2630],zoom:14,pitch:0});map.addControl(new mapboxgl.NavigationControl({showCompass:false}),'top-right');map.on('click',()=>{if(shState==='open')colSheet();});}
+async function loadPlazas(){try{const{data}=await sb.from('plazas').select('*');plazas=(data&&data.length)?data:DEMO;}catch(e){plazas=DEMO;}renderMkrs();updateCount();}
+function renderMkrs(){Object.values(mkrs).forEach(m=>m.remove());mkrs={};plazas.forEach(p=>{const el=document.createElement('div');el.className='sm-pin'+(p.disponible?'':' occupied');el.innerHTML='<div class="sm-pin-bubble">'+(p.disponible?p.precio_hora.toFixed(1)+'e':'--')+'</div><div class="sm-pin-tail"></div>';el.addEventListener('click',e=>{e.stopPropagation();selPlaza(p);});mkrs[p.id]=new mapboxgl.Marker({element:el,anchor:'bottom'}).setLngLat([p.lng,p.lat]).addTo(map);});}
+function updateMkr(p){const m=mkrs[p.id];if(!m)return;const el=m.getElement();el.className='sm-pin'+(p.disponible?'':' occupied');el.innerHTML='<div class="sm-pin-bubble">'+(p.disponible?p.precio_hora.toFixed(1)+'e':'--')+'</div><div class="sm-pin-tail"></div>';el.addEventListener('click',e=>{e.stopPropagation();selPlaza(p);});}
+function updateCount(){const n=plazas.filter(p=>p.disponible).length;document.getElementById('sh-avail').textContent=n+' libres';document.getElementById('sh-sub').textContent=plazas.length+' plazas en Bilbao';}
+function doChip(zona,btn){document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));btn.classList.add('active');plazas.forEach(p=>{const m=mkrs[p.id];if(!m)return;const v=zona==='todas'||(zona==='libre'?p.disponible:p.zona===zona);m.getElement().style.opacity=v?'1':'0.15';m.getElement().style.pointerEvents=v?'all':'none';});}
+function selPlaza(p){curPlaza=p;Object.values(mkrs).forEach(m=>m.getElement().classList.remove('sel'));if(mkrs[p.id])mkrs[p.id].getElement().classList.add('sel');document.getElementById('sh-name').textContent=p.nombre;document.getElementById('sh-sub').textContent=p.zona+' - '+(p.disponible?'Disponible':'Ocupada');document.getElementById('d-zona').textContent=p.zona;document.getElementById('d-nombre').textContent=p.nombre;document.getElementById('d-dir').textContent=p.direccion;document.getElementById('d-zona2').textContent=p.zona;document.getElementById('d-precio').innerHTML=p.precio_hora+'<span class="aunit">e/h</span>';const dsp=document.getElementById('d-disp');dsp.textContent=p.disponible?'Libre':'Ocupada';dsp.style.color=p.disponible?'#1a7a4a':'#c0603a';document.getElementById('d-tags').innerHTML=(p.tags||[]).map(t=>'<span class="ptag">'+t+'</span>').join('');const rb=document.getElementById('res-btn'),lh=document.getElementById('lhint');if(!p.disponible){rb.disabled=true;rb.textContent='No disponible';rb.style.display='block';lh.style.display='none';}else if(!user){rb.style.display='none';lh.style.display='block';}else{rb.disabled=false;rb.textContent='Reservar esta plaza';rb.style.display='block';lh.style.display='none';}document.getElementById('sh-body').style.display='block';openSheet();map.flyTo({center:[p.lng,p.lat],zoom:15.5,speed:0.9,offset:[0,-120]});}
+function openSheet(){shState='open';const s=document.getElementById('sheet');s.className='';s.classList.add('open');}
+function colSheet(){shState='peek';const s=document.getElementById('sheet');s.className='';s.classList.add('peek');document.getElementById('sh-body').style.display='none';document.getElementById('sh-name').textContent='Plazas en Bilbao';updateCount();Object.values(mkrs).forEach(m=>m.getElement().classList.remove('sel'));curPlaza=null;}
+function toggleSheet(){shState==='open'?colSheet():(curPlaza?openSheet():null);}
+function subscribeRT(){sb.channel('plazas-rt').on('postgres_changes',{event:'UPDATE',schema:'public',table:'plazas'},payload=>{const i=plazas.findIndex(p=>p.id===payload.new.id);if(i!==-1){plazas[i]=payload.new;updateMkr(payload.new);updateCount();if(curPlaza&&curPlaza.id===payload.new.id)selPlaza(payload.new);}}).subscribe();}
+function startTips(){showTip(TIPS[0]);tipT=setInterval(()=>{tipIdx=(tipIdx+1)%TIPS.length;const t=document.getElementById('tip');t.classList.add('fade');setTimeout(()=>{document.getElementById('tip-txt').innerHTML=TIPS[tipIdx];t.classList.remove('fade');},300);},5000);}
+function showTip(txt){document.getElementById('tip-txt').innerHTML=txt;}
+function closeTip(){clearInterval(tipT);const t=document.getElementById('tip');t.classList.add('fade');setTimeout(()=>t.style.display='none',300);}
+async function doReservar(){if(!user||!curPlaza)return;const btn=document.getElementById('res-btn');btn.disabled=true;btn.textContent='Reservando...';try{await sb.from('reservas').insert({plaza_id:curPlaza.id,plaza_nombre:curPlaza.nombre,zona:curPlaza.zona,user_id:user.id,user_email:user.email,precio_hora:curPlaza.precio_hora,estado:'pendiente',created_at:new Date().toISOString()});await sb.from('plazas').update({disponible:false}).eq('id',curPlaza.id);}catch(e){}document.getElementById('conf-msg').innerHTML='<strong>'+curPlaza.nombre+'</strong> en '+curPlaza.zona+'.<br><br>Te confirmaremos por email en breve.<br>Acceso sin llave, desde el movil.';document.getElementById('confirm').classList.add('show');}
+function closeConfirm(){document.getElementById('confirm').classList.remove('show');colSheet();}
+function openAuth(){document.getElementById('auth').classList.add('open');document.getElementById('auth-bg').classList.add('show');switchTab('l');}
+function closeAuth(){document.getElementById('auth').classList.remove('open');document.getElementById('auth-bg').classList.remove('show');}
+function switchTab(m){document.getElementById('tab-l').classList.toggle('active',m==='l');document.getElementById('tab-r').classList.toggle('active',m==='r');document.getElementById('lform').style.display=m==='l'?'block':'none';document.getElementById('rform').style.display=m==='r'?'block':'none';document.getElementById('auth-title').textContent=m==='l'?'Bienvenido':'Crear cuenta';document.getElementById('lerr').classList.remove('show');document.getElementById('rerr').classList.remove('show');}
+function setRole(r){rolesel=r;document.getElementById('rbc').className='role-b'+(r==='c'?' ac':'');document.getElementById('rbp').className='role-b'+(r==='p'?' ap':'');}
+async function doLogin(){const email=document.getElementById('le').value.trim(),pass=document.getElementById('lp').value;const btn=document.getElementById('lbtn'),err=document.getElementById('lerr');err.classList.remove('show');if(!email||!pass){showErr(err,'Rellena email y contrasena');return;}btn.disabled=true;btn.textContent='Entrando...';try{const{data,error}=await sb.auth.signInWithPassword({email,password:pass});if(error)throw error;user=data.user;await loadProf();onLogin(data.user);}catch(e){showErr(err,xlate(e.message));}btn.disabled=false;btn.textContent='Entrar';}
+async function doReg(){const n=document.getElementById('rn').value.trim(),e=document.getElementById('re').value.trim(),p=document.getElementById('rp').value.trim(),z=document.getElementById('rz').value,pass=document.getElementById('rpass').value;const btn=document.getElementById('rbtn'),err=document.getElementById('rerr'),ok=document.getElementById('rok');err.classList.remove('show');ok.classList.remove('show');if(!n||!e||!p||!z||!pass){showErr(err,'Rellena todos los campos');return;}if(pass.length<6){showErr(err,'Contrasena minimo 6 caracteres');return;}btn.disabled=true;btn.textContent='Creando cuenta...';try{const{data,error}=await sb.auth.signUp({email:e,password:pass,options:{data:{full_name:n}}});if(error)throw error;await sb.from('usuarios').insert({nombre:n,email:e,telefono:p,zona:z,rol:rolesel==='c'?'conductor':'propietario',estado:'nuevo',created_at:new Date().toISOString()});ok.textContent='Cuenta creada! Revisa tu email para confirmarla y luego entra.';ok.classList.add('show');}catch(e2){showErr(err,xlate(e2.message));}btn.disabled=false;btn.textContent='Crear cuenta';}
+async function checkSess(){const{data}=await sb.auth.getSession();if(data.session){user=data.session.user;await loadProf();}sb.auth.onAuthStateChange(async(_,sess)=>{user=sess?.user||null;if(user){await loadProf();updateAv();}else{userProf=null;updateAv();}});}
+async function loadProf(){if(!user)return;try{const{data}=await sb.from('usuarios').select('*').eq('email',user.email).single();userProf=data;}catch(e){userProf=null;}}
+function onLogin(u){closeAuth();updateAv();if(curPlaza)selPlaza(curPlaza);showToast('Bienvenido, '+(u.user_metadata?.full_name||u.email.split('@')[0]));}
+function updateAv(){const btn=document.getElementById('av-btn');if(user){btn.textContent=(user.user_metadata?.full_name||user.email.split('@')[0]).charAt(0).toUpperCase();btn.onclick=openProfile;}else{btn.textContent='?';btn.onclick=openAuth;}}
+async function openProfile(){if(!user){openAuth();return;}const name=user.user_metadata?.full_name||user.email.split('@')[0];document.getElementById('pav').textContent=name.charAt(0).toUpperCase();document.getElementById('pname').textContent=name;document.getElementById('pemail').textContent=user.email;document.getElementById('pr-name').textContent=name;document.getElementById('pr-email').textContent=user.email;if(userProf){document.getElementById('prole').textContent=userProf.rol||'Conductor';document.getElementById('p-zon').textContent=userProf.zona||'-';document.getElementById('pr-zona').textContent=userProf.zona||'-';document.getElementById('pr-phone').textContent=userProf.telefono||'-';}try{const{count}=await sb.from('reservas').select('*',{count:'exact',head:true}).eq('user_email',user.email);document.getElementById('p-res').textContent=count||0;}catch(e){}document.getElementById('profile').classList.add('open');}
+function closeProfile(){document.getElementById('profile').classList.remove('open');}
+function avatarClick(){user?openProfile():openAuth();}
+async function doLogout(){await sb.auth.signOut();user=null;userProf=null;closeProfile();updateAv();showToast('Sesion cerrada');}
 function showErr(el,msg){el.textContent=msg;el.classList.add('show');}
-function xlate(m){
-  if(m.includes('Invalid login'))return 'Email o contraseña incorrectos';
-  if(m.includes('already registered'))return 'Este email ya está registrado';
-  if(m.includes('Password'))return 'La contraseña debe tener al menos 6 caracteres';
-  return m;
-}
-
-async function checkSession(){
-  const{data}=await sb.auth.getSession();
-  if(data.session){currentUser=data.session.user;updateTopbar(data.session.user);}
-  sb.auth.onAuthStateChange((_e,session)=>{
-    currentUser=session?.user||null;
-    if(currentUser)updateTopbar(currentUser);
-    else{document.getElementById('user-name').style.display='none';document.getElementById('logout-btn').style.display='none';document.getElementById('auth-btn').style.display='block';}
-  });
-}
-
-function onLogin(user){
-  updateTopbar(user);
-  if(currentPlaza)openDetail(currentPlaza);
-  else closePanel();
-  showToast('Bienvenido, '+(user.user_metadata?.full_name||user.email.split('@')[0]));
-}
-
-function updateTopbar(user){
-  const name=user.user_metadata?.full_name||user.email.split('@')[0];
-  document.getElementById('user-name').textContent=name;
-  document.getElementById('user-name').style.display='block';
-  document.getElementById('logout-btn').style.display='block';
-  document.getElementById('auth-btn').style.display='none';
-}
-
-async function logout(){await sb.auth.signOut();showToast('Sesión cerrada');}
-
-async function handleReservar(){
-  if(!currentUser||!currentPlaza)return;
-  const btn=document.getElementById('reservar-btn');
-  btn.disabled=true; btn.textContent='Reservando...';
-  try{
-    await sb.from('reservas').insert({plaza_id:currentPlaza.id,plaza_nombre:currentPlaza.nombre,zona:currentPlaza.zona,user_id:currentUser.id,user_email:currentUser.email,precio_hora:currentPlaza.precio_hora,estado:'pendiente',created_at:new Date().toISOString()});
-  }catch(e){}
-  document.getElementById('confirm-msg').innerHTML=`<strong>${currentPlaza.nombre}</strong> en ${currentPlaza.zona}.<br><br>Te confirmaremos por email en breve.<br>El acceso será sin llave, desde el móvil.`;
-  showView('confirm');
-}
-
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
-}
+function xlate(m){if(m.includes('Invalid login'))return 'Email o contrasena incorrectos';if(m.includes('already registered'))return 'Este email ya esta registrado';if(m.includes('Password'))return 'Minimo 6 caracteres';return m;}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 </script>
 </body>
 </html>
