@@ -9,199 +9,94 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --g:    #0D4A3E;
-      --gl:   #1a6155;
-      --gold: #C9A96E;
-      --golm: #a8875a;
-      --goll: #dfc08e;
-      --cr:   #f5efe4;
-      --crd:  #e8dece;
-      --tx:   #1a1a1a;
-      --txm:  #5a5a5a;
-      --bd:   rgba(201,169,110,0.25);
-      --bds:  rgba(201,169,110,0.5);
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --g:#0D4A3E;--gl:#1a6155;--gold:#C9A96E;--golm:#a8875a;--goll:#dfc08e;
+      --cr:#f5efe4;--crd:#e8dece;--tx:#1a1a1a;--txm:#5a5a5a;
+      --bd:rgba(201,169,110,0.25);--bds:rgba(201,169,110,0.5);
     }
-    html, body { height: 100%; font-family: 'DM Sans', sans-serif; color: var(--tx); background: var(--g); overflow: hidden; }
-
-    /* TOPBAR */
-    #topbar {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-      height: 56px; background: var(--g);
-      border-bottom: 1px solid rgba(201,169,110,0.25);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 20px;
-    }
-    .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
-    .logo svg { width: 30px; height: 30px; }
-    .logo-text { font-family: 'Cormorant Garamond', serif; color: var(--gold); }
-    .logo-text b { font-size: 17px; font-weight: 600; letter-spacing: 0.16em; display: block; line-height: 1.1; }
-    .logo-text small { font-size: 10px; letter-spacing: 0.22em; color: var(--golm); display: block; }
-    #auth-btn {
-      background: rgba(201,169,110,0.12); border: 1px solid var(--bds);
-      color: var(--gold); font-family: 'DM Sans', sans-serif;
-      font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
-      padding: 7px 16px; border-radius: 20px; cursor: pointer; transition: background 0.15s;
-    }
-    #auth-btn:hover { background: rgba(201,169,110,0.22); }
-    #user-area { display: flex; align-items: center; gap: 10px; }
-    #user-name { font-size: 12px; color: var(--golm); letter-spacing: 0.06em; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #logout-btn {
-      background: none; border: none; color: rgba(201,169,110,0.45);
-      font-size: 11px; cursor: pointer; font-family: 'DM Sans', sans-serif;
-      letter-spacing: 0.06em; transition: color 0.15s; padding: 4px;
-    }
-    #logout-btn:hover { color: var(--gold); }
-
-    /* MAP */
-    #map { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; z-index: 1; }
-    .leaflet-tile-pane { filter: saturate(0.65) brightness(0.82); }
-    .leaflet-control-zoom a { background: var(--g) !important; color: var(--gold) !important; border-color: var(--bds) !important; }
-    .leaflet-control-attribution { display: none; }
-
-    /* MARKERS */
-    .sm-marker {
-      background: var(--g); border: 2px solid var(--gold);
-      border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
-      width: 34px; height: 34px;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.4); cursor: pointer;
-    }
-    .sm-marker span { transform: rotate(45deg); font-size: 10px; font-weight: 500; color: var(--gold); font-family: 'DM Sans', sans-serif; }
-    .sm-marker.occupied { border-color: rgba(201,169,110,0.3); background: rgba(9,46,39,0.85); }
-    .sm-marker.occupied span { color: rgba(201,169,110,0.3); }
-
-    /* SIDE PANEL */
-    #panel {
-      position: fixed; top: 56px; right: 0; bottom: 0;
-      width: 380px; z-index: 500; background: var(--cr);
-      border-left: 1px solid var(--bd);
-      transform: translateX(100%);
-      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-      overflow-y: auto;
-    }
-    #panel.open { transform: translateX(0); }
-    .panel-close {
-      position: absolute; top: 14px; right: 16px;
-      background: none; border: none; color: var(--txm);
-      font-size: 22px; cursor: pointer; width: 30px; height: 30px;
-      display: flex; align-items: center; justify-content: center;
-      border-radius: 50%; transition: background 0.1s; z-index: 10;
-    }
-    .panel-close:hover { background: var(--crd); }
-
-    /* VIEWS */
-    .view { padding: 28px 24px 40px; display: none; flex-direction: column; }
-    .view.active { display: flex; }
-
-    /* DETAIL */
-    .plaza-zona { font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--golm); margin-bottom: 5px; }
-    .plaza-nombre { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: var(--g); line-height: 1.15; margin-bottom: 5px; }
-    .plaza-dir { font-size: 13px; color: var(--txm); margin-bottom: 22px; }
-    .plaza-attrs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
-    .attr-card { background: var(--g); border-radius: 10px; padding: 14px 16px; }
-    .attr-label { font-size: 10px; letter-spacing: 0.1em; color: rgba(201,169,110,0.5); text-transform: uppercase; margin-bottom: 6px; }
-    .attr-value { font-family: 'Cormorant Garamond', serif; font-size: 26px; color: var(--gold); font-weight: 600; line-height: 1; }
-    .attr-unit { font-size: 12px; color: var(--golm); margin-left: 3px; }
-    .plaza-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 26px; }
-    .tag { font-size: 11px; padding: 4px 11px; border-radius: 20px; background: rgba(13,74,62,0.08); border: 1px solid rgba(13,74,62,0.15); color: var(--g); }
-    .primary-btn {
-      width: 100%; padding: 14px; background: var(--g); color: var(--gold);
-      border: none; border-radius: 10px; font-family: 'DM Sans', sans-serif;
-      font-size: 13px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
-      cursor: pointer; transition: background 0.15s; margin-bottom: 10px;
-    }
-    .primary-btn:hover:not(:disabled) { background: var(--gl); }
-    .primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .login-hint { font-size: 12px; color: var(--txm); text-align: center; }
-    .login-hint a { color: var(--golm); cursor: pointer; text-decoration: underline; }
-
-    /* AUTH & FORMS */
-    .view-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 600; color: var(--g); margin-bottom: 6px; }
-    .view-sub { font-size: 13px; color: var(--txm); margin-bottom: 24px; line-height: 1.5; }
-    .auth-tabs { display: flex; margin-bottom: 22px; border-bottom: 2px solid var(--crd); }
-    .auth-tab {
-      flex: 1; padding: 10px; text-align: center;
-      font-size: 13px; font-weight: 500; letter-spacing: 0.05em;
-      cursor: pointer; color: var(--txm);
-      border-bottom: 2px solid transparent; margin-bottom: -2px;
-      transition: color 0.15s, border-color 0.15s;
-    }
-    .auth-tab.active { color: var(--g); border-color: var(--g); }
-    .form-group { margin-bottom: 13px; }
-    .form-label { font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--txm); display: block; margin-bottom: 5px; }
-    .form-input, .form-select {
-      width: 100%; padding: 10px 13px; border: 1px solid var(--bds);
-      border-radius: 8px; font-size: 13px; color: var(--tx); background: #fff;
-      font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.15s;
-      appearance: none;
-    }
-    .form-input:focus, .form-select:focus { border-color: var(--g); }
-    .form-input::placeholder { color: #bbb; }
-
-    /* ROLE TOGGLE */
-    .role-toggle { display: flex; gap: 8px; margin-bottom: 13px; }
-    .role-btn {
-      flex: 1; padding: 9px; border-radius: 8px;
-      border: 1px solid var(--bds); background: transparent;
-      font-size: 12px; font-weight: 500; letter-spacing: 0.07em;
-      text-transform: uppercase; cursor: pointer;
-      font-family: 'DM Sans', sans-serif; color: var(--txm);
-      transition: all 0.15s;
-    }
-    .role-btn.active-conductor { background: var(--g); color: var(--gold); border-color: var(--g); }
-    .role-btn.active-propietario { background: var(--gold); color: var(--g); border-color: var(--gold); }
-
-    .form-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
-    .form-divider span { font-size: 11px; color: var(--txm); white-space: nowrap; letter-spacing: 0.06em; }
-    .form-divider::before, .form-divider::after { content:''; flex:1; height:1px; background: var(--bd); }
-
-    .msg-error { font-size: 12px; color: #c0392b; background: #fdf0ef; border: 1px solid #f5c6c2; border-radius: 6px; padding: 8px 12px; margin-bottom: 13px; display: none; }
-    .msg-error.show { display: block; }
-    .msg-ok { font-size: 13px; color: #1a7a4a; background: #edfaf3; border: 1px solid #a3e6c4; border-radius: 6px; padding: 10px 14px; margin-top: 13px; display: none; text-align: center; line-height: 1.5; }
-    .msg-ok.show { display: block; }
-
-    /* CONFIRM */
-    #confirm-view { align-items: center; text-align: center; padding-top: 48px; }
-    .confirm-icon { width: 68px; height: 68px; background: var(--g); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 22px; border: 2px solid rgba(201,169,110,0.3); }
-    .confirm-icon svg { width: 30px; height: 30px; }
-    .confirm-back { font-size: 12px; color: var(--golm); cursor: pointer; letter-spacing: 0.06em; text-decoration: underline; margin-top: 8px; }
-
-    /* FILTERS */
-    #filters {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      z-index: 500; background: var(--g);
-      border: 1px solid rgba(201,169,110,0.3); border-radius: 40px;
-      padding: 7px 10px; display: flex; gap: 4px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.35);
-    }
-    .filt-btn {
-      font-size: 11px; font-weight: 500; padding: 6px 14px; border-radius: 30px;
-      border: 1px solid transparent; background: transparent;
-      color: rgba(201,169,110,0.5); cursor: pointer;
-      font-family: 'DM Sans', sans-serif; letter-spacing: 0.05em; transition: all 0.15s;
-    }
-    .filt-btn.active { background: var(--gold); color: var(--g); }
-    .filt-btn:hover:not(.active) { color: var(--gold); }
-
-    /* LOADING */
-    #loading { position: fixed; inset: 0; z-index: 9000; background: var(--g); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; transition: opacity 0.5s; }
-    #loading.hidden { opacity: 0; pointer-events: none; }
-    #loading svg { width: 52px; height: 52px; }
-    #loading p { font-family: 'Cormorant Garamond', serif; font-size: 13px; letter-spacing: 0.24em; color: var(--golm); text-transform: uppercase; }
-
-    /* TOAST */
-    #toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(10px); background: var(--g); border: 1px solid var(--bds); color: var(--goll); padding: 10px 22px; border-radius: 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; z-index: 2000; opacity: 0; transition: opacity 0.25s, transform 0.25s; white-space: nowrap; pointer-events: none; }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* LEAFLET POPUP */
-    .leaflet-popup-content-wrapper { background: var(--g) !important; border: 1px solid var(--bds) !important; border-radius: 10px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.3) !important; padding: 0 !important; }
-    .leaflet-popup-content { margin: 11px 14px !important; font-family: 'DM Sans', sans-serif !important; color: var(--gold) !important; font-size: 12px !important; }
-    .leaflet-popup-tip { background: var(--g) !important; }
-    .leaflet-popup-close-button { color: var(--golm) !important; top: 5px !important; right: 8px !important; }
-
-    @media (max-width: 600px) { #panel { width: 100%; } }
+    html,body{height:100%;font-family:'DM Sans',sans-serif;color:var(--tx);background:var(--g);overflow:hidden;}
+    #topbar{position:fixed;top:0;left:0;right:0;z-index:1000;height:56px;background:var(--g);border-bottom:1px solid rgba(201,169,110,0.25);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+    .logo{display:flex;align-items:center;gap:9px;text-decoration:none;}
+    .logo svg{width:30px;height:30px;}
+    .logo-text{font-family:'Cormorant Garamond',serif;color:var(--gold);}
+    .logo-text b{font-size:17px;font-weight:600;letter-spacing:0.16em;display:block;line-height:1.1;}
+    .logo-text small{font-size:10px;letter-spacing:0.22em;color:var(--golm);display:block;}
+    #auth-btn{background:rgba(201,169,110,0.12);border:1px solid var(--bds);color:var(--gold);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;letter-spacing:0.08em;padding:7px 16px;border-radius:20px;cursor:pointer;transition:background 0.15s;}
+    #auth-btn:hover{background:rgba(201,169,110,0.22);}
+    #user-area{display:flex;align-items:center;gap:10px;}
+    #user-name{font-size:12px;color:var(--golm);letter-spacing:0.06em;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    #logout-btn{background:none;border:none;color:rgba(201,169,110,0.45);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.06em;transition:color 0.15s;padding:4px;}
+    #logout-btn:hover{color:var(--gold);}
+    #map{position:fixed;top:56px;left:0;right:0;bottom:0;z-index:1;}
+    .leaflet-tile-pane{filter:saturate(0.65) brightness(0.82);}
+    .leaflet-control-zoom a{background:var(--g)!important;color:var(--gold)!important;border-color:var(--bds)!important;}
+    .leaflet-control-attribution{display:none;}
+    .sm-marker{background:var(--g);border:2px solid var(--gold);border-radius:50% 50% 50% 0;transform:rotate(-45deg);width:34px;height:34px;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(0,0,0,0.4);cursor:pointer;}
+    .sm-marker span{transform:rotate(45deg);font-size:10px;font-weight:500;color:var(--gold);font-family:'DM Sans',sans-serif;}
+    .sm-marker.occupied{border-color:rgba(201,169,110,0.3);background:rgba(9,46,39,0.85);}
+    .sm-marker.occupied span{color:rgba(201,169,110,0.3);}
+    #panel{position:fixed;top:56px;right:0;bottom:0;width:380px;z-index:500;background:var(--cr);border-left:1px solid var(--bd);transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;}
+    #panel.open{transform:translateX(0);}
+    .panel-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--txm);font-size:22px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background 0.1s;z-index:10;}
+    .panel-close:hover{background:var(--crd);}
+    .view{padding:28px 24px 40px;display:none;flex-direction:column;}
+    .view.active{display:flex;}
+    .plaza-zona{font-size:10px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:var(--golm);margin-bottom:5px;}
+    .plaza-nombre{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--g);line-height:1.15;margin-bottom:5px;}
+    .plaza-dir{font-size:13px;color:var(--txm);margin-bottom:22px;}
+    .plaza-attrs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+    .attr-card{background:var(--g);border-radius:10px;padding:14px 16px;}
+    .attr-label{font-size:10px;letter-spacing:0.1em;color:rgba(201,169,110,0.5);text-transform:uppercase;margin-bottom:6px;}
+    .attr-value{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--gold);font-weight:600;line-height:1;}
+    .attr-unit{font-size:12px;color:var(--golm);margin-left:3px;}
+    .plaza-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:26px;}
+    .tag{font-size:11px;padding:4px 11px;border-radius:20px;background:rgba(13,74,62,0.08);border:1px solid rgba(13,74,62,0.15);color:var(--g);}
+    .primary-btn{width:100%;padding:14px;background:var(--g);color:var(--gold);border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;transition:background 0.15s;margin-bottom:10px;}
+    .primary-btn:hover:not(:disabled){background:var(--gl);}
+    .primary-btn:disabled{opacity:0.4;cursor:not-allowed;}
+    .login-hint{font-size:12px;color:var(--txm);text-align:center;}
+    .login-hint a{color:var(--golm);cursor:pointer;text-decoration:underline;}
+    .view-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;color:var(--g);margin-bottom:6px;}
+    .view-sub{font-size:13px;color:var(--txm);margin-bottom:24px;line-height:1.5;}
+    .auth-tabs{display:flex;margin-bottom:22px;border-bottom:2px solid var(--crd);}
+    .auth-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:500;letter-spacing:0.05em;cursor:pointer;color:var(--txm);border-bottom:2px solid transparent;margin-bottom:-2px;transition:color 0.15s,border-color 0.15s;}
+    .auth-tab.active{color:var(--g);border-color:var(--g);}
+    .form-group{margin-bottom:13px;}
+    .form-label{font-size:10px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--txm);display:block;margin-bottom:5px;}
+    .form-input,.form-select{width:100%;padding:10px 13px;border:1px solid var(--bds);border-radius:8px;font-size:13px;color:var(--tx);background:#fff;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.15s;appearance:none;}
+    .form-input:focus,.form-select:focus{border-color:var(--g);}
+    .form-input::placeholder{color:#bbb;}
+    .role-toggle{display:flex;gap:8px;margin-bottom:13px;}
+    .role-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--bds);background:transparent;font-size:12px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--txm);transition:all 0.15s;}
+    .role-btn.active-conductor{background:var(--g);color:var(--gold);border-color:var(--g);}
+    .role-btn.active-propietario{background:var(--gold);color:var(--g);border-color:var(--gold);}
+    .form-divider{display:flex;align-items:center;gap:10px;margin:14px 0;}
+    .form-divider span{font-size:11px;color:var(--txm);white-space:nowrap;letter-spacing:0.06em;}
+    .form-divider::before,.form-divider::after{content:'';flex:1;height:1px;background:var(--bd);}
+    .msg-error{font-size:12px;color:#c0392b;background:#fdf0ef;border:1px solid #f5c6c2;border-radius:6px;padding:8px 12px;margin-bottom:13px;display:none;}
+    .msg-error.show{display:block;}
+    .msg-ok{font-size:13px;color:#1a7a4a;background:#edfaf3;border:1px solid #a3e6c4;border-radius:6px;padding:10px 14px;margin-top:13px;display:none;text-align:center;line-height:1.5;}
+    .msg-ok.show{display:block;}
+    #confirm-view{align-items:center;text-align:center;padding-top:48px;}
+    .confirm-icon{width:68px;height:68px;background:var(--g);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:22px;border:2px solid rgba(201,169,110,0.3);}
+    .confirm-icon svg{width:30px;height:30px;}
+    .confirm-back{font-size:12px;color:var(--golm);cursor:pointer;letter-spacing:0.06em;text-decoration:underline;margin-top:8px;}
+    #filters{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:500;background:var(--g);border:1px solid rgba(201,169,110,0.3);border-radius:40px;padding:7px 10px;display:flex;gap:4px;box-shadow:0 4px 24px rgba(0,0,0,0.35);}
+    .filt-btn{font-size:11px;font-weight:500;padding:6px 14px;border-radius:30px;border:1px solid transparent;background:transparent;color:rgba(201,169,110,0.5);cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:0.05em;transition:all 0.15s;}
+    .filt-btn.active{background:var(--gold);color:var(--g);}
+    .filt-btn:hover:not(.active){color:var(--gold);}
+    #loading{position:fixed;inset:0;z-index:9000;background:var(--g);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity 0.5s;}
+    #loading.hidden{opacity:0;pointer-events:none;}
+    #loading svg{width:52px;height:52px;}
+    #loading p{font-family:'Cormorant Garamond',serif;font-size:13px;letter-spacing:0.24em;color:var(--golm);text-transform:uppercase;}
+    #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--g);border:1px solid var(--bds);color:var(--goll);padding:10px 22px;border-radius:8px;font-size:12px;font-weight:500;letter-spacing:0.06em;z-index:2000;opacity:0;transition:opacity 0.25s,transform 0.25s;white-space:nowrap;pointer-events:none;}
+    #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    .leaflet-popup-content-wrapper{background:var(--g)!important;border:1px solid var(--bds)!important;border-radius:10px!important;box-shadow:0 4px 16px rgba(0,0,0,0.3)!important;padding:0!important;}
+    .leaflet-popup-content{margin:11px 14px!important;font-family:'DM Sans',sans-serif!important;color:var(--gold)!important;font-size:12px!important;}
+    .leaflet-popup-tip{background:var(--g)!important;}
+    .leaflet-popup-close-button{color:var(--golm)!important;top:5px!important;right:8px!important;}
+    @media(max-width:600px){#panel{width:100%;}}
   </style>
 </head>
 <body>
@@ -215,9 +110,7 @@
 
 <header id="topbar">
   <a class="logo" href="#">
-    <svg viewBox="0 0 30 30" fill="none">
-      <path d="M21 9C19 7.5 16.5 7 14 7.5C10 8.5 7.5 12 8.5 15.5C9.2 18.2 12 19.5 14.5 20.5C17.5 21.7 19.5 23.5 18.5 26.5C17.5 29 14 30 11 29C9 28.4 7.5 27 7 25.5" stroke="#C9A96E" stroke-width="2.2" stroke-linecap="round"/>
-    </svg>
+    <svg viewBox="0 0 30 30" fill="none"><path d="M21 9C19 7.5 16.5 7 14 7.5C10 8.5 7.5 12 8.5 15.5C9.2 18.2 12 19.5 14.5 20.5C17.5 21.7 19.5 23.5 18.5 26.5C17.5 29 14 30 11 29C9 28.4 7.5 27 7 25.5" stroke="#C9A96E" stroke-width="2.2" stroke-linecap="round"/></svg>
     <div class="logo-text"><b>STRABE</b><small>MOTION</small></div>
   </a>
   <div id="user-area">
@@ -240,101 +133,62 @@
 <div id="panel">
   <button class="panel-close" onclick="closePanel()">×</button>
 
-  <!-- VIEW: PLAZA DETAIL -->
+  <!-- DETAIL -->
   <div id="detail-view" class="view">
     <div class="plaza-zona" id="d-zona"></div>
     <div class="plaza-nombre" id="d-nombre"></div>
     <div class="plaza-dir" id="d-dir"></div>
     <div class="plaza-attrs">
-      <div class="attr-card">
-        <div class="attr-label">Precio / hora</div>
-        <div class="attr-value" id="d-precio"></div>
-      </div>
-      <div class="attr-card">
-        <div class="attr-label">Estado</div>
-        <div class="attr-value" id="d-disp" style="font-size:15px;padding-top:6px;line-height:1.3"></div>
-      </div>
+      <div class="attr-card"><div class="attr-label">Precio / hora</div><div class="attr-value" id="d-precio"></div></div>
+      <div class="attr-card"><div class="attr-label">Estado</div><div class="attr-value" id="d-disp" style="font-size:15px;padding-top:6px;line-height:1.3"></div></div>
     </div>
     <div class="plaza-tags" id="d-tags"></div>
     <button class="primary-btn" id="reservar-btn" onclick="handleReservar()">Reservar esta plaza</button>
-    <div class="login-hint" id="login-hint" style="display:none">
-      <a onclick="openAuth()">Inicia sesión</a> para reservar
-    </div>
+    <div class="login-hint" id="login-hint" style="display:none"><a onclick="openAuth()">Inicia sesión</a> para reservar</div>
   </div>
 
-  <!-- VIEW: LOGIN -->
+  <!-- LOGIN -->
   <div id="login-view" class="view">
-    <div class="view-title">Bienvenido</div>
+    <div class="view-title" id="auth-title">Bienvenido</div>
     <div class="view-sub">Accede para reservar plazas en Bilbao</div>
     <div class="auth-tabs">
       <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Entrar</div>
       <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Registrarse</div>
     </div>
 
-    <!-- LOGIN FORM -->
     <div id="login-form">
       <div class="msg-error" id="login-error"></div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input class="form-input" id="l-email" type="email" placeholder="tu@email.com" autocomplete="email">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Contraseña</label>
-        <input class="form-input" id="l-pass" type="password" placeholder="••••••••">
-      </div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="l-email" type="email" placeholder="tu@email.com" autocomplete="email"></div>
+      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" id="l-pass" type="password" placeholder="••••••••"></div>
       <button class="primary-btn" id="login-btn" onclick="doLogin()" style="margin-top:4px">Entrar</button>
     </div>
 
-    <!-- REGISTER FORM -->
     <div id="register-form" style="display:none">
       <div class="msg-error" id="reg-error"></div>
-
-      <div class="form-group">
-        <label class="form-label">Nombre completo</label>
-        <input class="form-input" id="r-name" type="text" placeholder="Iker Madariaga" autocomplete="name">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input class="form-input" id="r-email" type="email" placeholder="tu@email.com" autocomplete="email">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Teléfono</label>
-        <input class="form-input" id="r-phone" type="tel" placeholder="+34 600 000 000" autocomplete="tel">
-      </div>
+      <div class="form-group"><label class="form-label">Nombre completo</label><input class="form-input" id="r-name" type="text" placeholder="Iker Madariaga" autocomplete="name"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="r-email" type="email" placeholder="tu@email.com" autocomplete="email"></div>
+      <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="r-phone" type="tel" placeholder="+34 600 000 000"></div>
       <div class="form-group">
         <label class="form-label">Zona de Bilbao</label>
         <select class="form-select" id="r-zona">
           <option value="">Seleccionar zona</option>
-          <option>Abando</option>
-          <option>Deusto</option>
-          <option>Santutxu</option>
-          <option>Basurto</option>
-          <option>Casco Viejo</option>
+          <option>Abando</option><option>Deusto</option><option>Santutxu</option><option>Basurto</option><option>Casco Viejo</option>
         </select>
       </div>
-
       <div class="form-divider"><span>Soy</span></div>
       <div class="role-toggle">
         <button class="role-btn active-conductor" id="rb-conductor" onclick="setRole('conductor')">Conductor</button>
         <button class="role-btn" id="rb-propietario" onclick="setRole('propietario')">Propietario</button>
       </div>
-
-      <div class="form-group">
-        <label class="form-label">Contraseña</label>
-        <input class="form-input" id="r-pass" type="password" placeholder="Mínimo 6 caracteres">
-      </div>
+      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" id="r-pass" type="password" placeholder="Mínimo 6 caracteres"></div>
       <button class="primary-btn" id="reg-btn" onclick="doRegister()" style="margin-top:4px">Crear cuenta</button>
       <div class="msg-ok" id="reg-ok"></div>
     </div>
   </div>
 
-  <!-- VIEW: CONFIRM -->
+  <!-- CONFIRM -->
   <div id="confirm-view" class="view">
-    <div class="confirm-icon">
-      <svg viewBox="0 0 30 30" fill="none">
-        <path d="M6 15l6 6L24 9" stroke="#C9A96E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </div>
+    <div class="confirm-icon"><svg viewBox="0 0 30 30" fill="none"><path d="M6 15l6 6L24 9" stroke="#C9A96E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div class="view-title" style="margin-bottom:10px">¡Plaza reservada!</div>
     <div class="view-sub" id="confirm-msg" style="margin-bottom:28px"></div>
     <span class="confirm-back" onclick="closePanel()">← Volver al mapa</span>
@@ -352,240 +206,186 @@ const sb = supabase.createClient(
 );
 
 const DEMO = [
-  { id:1,  nombre:"Plaza Moyúa",        direccion:"Pza. Moyúa 3",             zona:"Abando",      lat:43.2637, lng:-2.9353, precio_hora:1.5, disponible:true,  tags:["Cubierta","24h","Acceso fácil"] },
-  { id:2,  nombre:"Garaje Alameda",     direccion:"Alameda de Recalde 18",    zona:"Abando",      lat:43.2618, lng:-2.9330, precio_hora:1.2, disponible:true,  tags:["Cubierta","Altura 2.1m"] },
-  { id:3,  nombre:"Plaza Indautxu",     direccion:"C/ Autonomía 22",          zona:"Abando",      lat:43.2608, lng:-2.9392, precio_hora:1.0, disponible:false, tags:["Descubierta","Vigilada"] },
-  { id:4,  nombre:"Abandoibarra",       direccion:"Abandoibarra Etorbidea 4", zona:"Abando",      lat:43.2672, lng:-2.9380, precio_hora:1.8, disponible:true,  tags:["Cubierta","Junto Guggenheim"] },
-  { id:5,  nombre:"Garaje Deusto",      direccion:"C/ Henao 8",               zona:"Deusto",      lat:43.2720, lng:-2.9484, precio_hora:0.9, disponible:true,  tags:["Cubierta","Moto OK"] },
-  { id:6,  nombre:"Plaza Universidad",  direccion:"Avda. Universidades 24",   zona:"Deusto",      lat:43.2698, lng:-2.9512, precio_hora:0.8, disponible:true,  tags:["Descubierta","Fines de semana"] },
-  { id:7,  nombre:"Siete Calles",       direccion:"C/ Correo 5",              zona:"Casco Viejo", lat:43.2570, lng:-2.9232, precio_hora:1.3, disponible:true,  tags:["Cubierta","Centro histórico"] },
-  { id:8,  nombre:"Plaza Atxuri",       direccion:"Pza. de la Encarnación 1", zona:"Casco Viejo", lat:43.2556, lng:-2.9198, precio_hora:1.0, disponible:true,  tags:["Descubierta","Cerca estación"] },
-  { id:9,  nombre:"Garaje Santutxu",    direccion:"C/ Iturribide 44",         zona:"Santutxu",    lat:43.2650, lng:-2.9130, precio_hora:0.7, disponible:true,  tags:["Cubierta","Tranquilo"] },
-  { id:10, nombre:"Plaza Basurto",      direccion:"Avda. de los Fueros 12",   zona:"Basurto",     lat:43.2585, lng:-2.9450, precio_hora:0.8, disponible:false, tags:["Descubierta","Hospital cercano"] },
+  {id:1, nombre:"Plaza Moyúa",       direccion:"Pza. Moyúa 3",             zona:"Abando",      lat:43.2637,lng:-2.9353,precio_hora:1.5,disponible:true, tags:["Cubierta","24h","Acceso fácil"]},
+  {id:2, nombre:"Garaje Alameda",    direccion:"Alameda de Recalde 18",    zona:"Abando",      lat:43.2618,lng:-2.9330,precio_hora:1.2,disponible:true, tags:["Cubierta","Altura 2.1m"]},
+  {id:3, nombre:"Plaza Indautxu",    direccion:"C/ Autonomía 22",          zona:"Abando",      lat:43.2608,lng:-2.9392,precio_hora:1.0,disponible:false,tags:["Descubierta","Vigilada"]},
+  {id:4, nombre:"Abandoibarra",      direccion:"Abandoibarra Etorbidea 4", zona:"Abando",      lat:43.2672,lng:-2.9380,precio_hora:1.8,disponible:true, tags:["Cubierta","Junto Guggenheim"]},
+  {id:5, nombre:"Garaje Deusto",     direccion:"C/ Henao 8",               zona:"Deusto",      lat:43.2720,lng:-2.9484,precio_hora:0.9,disponible:true, tags:["Cubierta","Moto OK"]},
+  {id:6, nombre:"Plaza Universidad", direccion:"Avda. Universidades 24",   zona:"Deusto",      lat:43.2698,lng:-2.9512,precio_hora:0.8,disponible:true, tags:["Descubierta","Fines de semana"]},
+  {id:7, nombre:"Siete Calles",      direccion:"C/ Correo 5",              zona:"Casco Viejo", lat:43.2570,lng:-2.9232,precio_hora:1.3,disponible:true, tags:["Cubierta","Centro histórico"]},
+  {id:8, nombre:"Plaza Atxuri",      direccion:"Pza. de la Encarnación 1", zona:"Casco Viejo", lat:43.2556,lng:-2.9198,precio_hora:1.0,disponible:true, tags:["Descubierta","Cerca estación"]},
+  {id:9, nombre:"Garaje Santutxu",   direccion:"C/ Iturribide 44",         zona:"Santutxu",    lat:43.2650,lng:-2.9130,precio_hora:0.7,disponible:true, tags:["Cubierta","Tranquilo"]},
+  {id:10,nombre:"Plaza Basurto",     direccion:"Avda. de los Fueros 12",   zona:"Basurto",     lat:43.2585,lng:-2.9450,precio_hora:0.8,disponible:false,tags:["Descubierta","Hospital cercano"]},
 ];
 
-let currentUser  = null;
-let currentPlaza = null;
-let allMarkers   = [];
-let roleSelected = 'conductor';
-let map;
+let currentUser=null, currentPlaza=null, allMarkers=[], roleSelected='conductor', map;
 
 window.addEventListener('load', async () => {
   initMap();
   await checkSession();
   await loadPlazas();
-  setTimeout(() => document.getElementById('loading').classList.add('hidden'), 400);
+  setTimeout(()=>document.getElementById('loading').classList.add('hidden'),400);
 });
 
-// MAP
 function initMap() {
-  map = L.map('map', { center:[43.2630,-2.9350], zoom:14 });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19 }).addTo(map);
+  map = L.map('map',{center:[43.2630,-2.9350],zoom:14});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 }
 
 async function loadPlazas() {
-  let plazas = DEMO;
-  try {
-    const { data } = await sb.from('plazas').select('*');
-    if (data && data.length) plazas = data;
-  } catch(e) {}
+  let plazas=DEMO;
+  try { const{data}=await sb.from('plazas').select('*'); if(data&&data.length)plazas=data; } catch(e){}
   renderMarkers(plazas);
 }
 
 function renderMarkers(plazas) {
-  allMarkers.forEach(m => map.removeLayer(m.marker));
-  allMarkers = [];
-  plazas.forEach(p => {
-    const icon = L.divIcon({
-      className: '',
-      html: `<div class="sm-marker${!p.disponible?' occupied':''}"><span>${p.precio_hora?p.precio_hora.toFixed(1)+'€':'P'}</span></div>`,
-      iconSize:[34,34], iconAnchor:[17,34],
-    });
-    const marker = L.marker([p.lat, p.lng], { icon }).addTo(map);
-    marker.on('click', () => openDetail(p));
-    allMarkers.push({ marker, plaza:p });
+  allMarkers.forEach(m=>map.removeLayer(m.marker)); allMarkers=[];
+  plazas.forEach(p=>{
+    const icon=L.divIcon({className:'',html:`<div class="sm-marker${!p.disponible?' occupied':''}"><span>${p.precio_hora?p.precio_hora.toFixed(1)+'€':'P'}</span></div>`,iconSize:[34,34],iconAnchor:[17,34]});
+    const marker=L.marker([p.lat,p.lng],{icon}).addTo(map);
+    marker.on('click',()=>openDetail(p));
+    allMarkers.push({marker,plaza:p});
   });
 }
 
-function filterZona(zona, btn) {
-  document.querySelectorAll('.filt-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  allMarkers.forEach(({ marker, plaza }) => marker.setOpacity(zona==='todas'||plaza.zona===zona ? 1 : 0.15));
+function filterZona(zona,btn) {
+  document.querySelectorAll('.filt-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  allMarkers.forEach(({marker,plaza})=>marker.setOpacity(zona==='todas'||plaza.zona===zona?1:0.15));
 }
 
-// PANEL
-function showView(v) {
-  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.getElementById(v+'-view').classList.add('active');
-}
-function openPanel()  { document.getElementById('panel').classList.add('open'); }
-function closePanel() { document.getElementById('panel').classList.remove('open'); currentPlaza = null; }
+function showView(v) { document.querySelectorAll('.view').forEach(el=>el.classList.remove('active')); document.getElementById(v+'-view').classList.add('active'); }
+function openPanel() { document.getElementById('panel').classList.add('open'); }
+function closePanel(){ document.getElementById('panel').classList.remove('open'); currentPlaza=null; }
 
 function openDetail(plaza) {
-  currentPlaza = plaza;
-  document.getElementById('d-zona').textContent   = plaza.zona;
-  document.getElementById('d-nombre').textContent = plaza.nombre;
-  document.getElementById('d-dir').textContent    = plaza.direccion;
-  document.getElementById('d-precio').innerHTML   = `${plaza.precio_hora}<span class="attr-unit">€/h</span>`;
-  const dispEl = document.getElementById('d-disp');
-  dispEl.textContent = plaza.disponible ? 'Disponible' : 'Ocupada';
-  dispEl.style.color = plaza.disponible ? '#2a9d6f' : '#c0603a';
-  document.getElementById('d-tags').innerHTML = (plaza.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
-  const btn  = document.getElementById('reservar-btn');
-  const hint = document.getElementById('login-hint');
-  if (!plaza.disponible) {
-    btn.disabled=true; btn.textContent='No disponible'; btn.style.display='block'; hint.style.display='none';
-  } else if (!currentUser) {
-    btn.style.display='none'; hint.style.display='block';
-  } else {
-    btn.disabled=false; btn.textContent='Reservar esta plaza'; btn.style.display='block'; hint.style.display='none';
-  }
+  currentPlaza=plaza;
+  document.getElementById('d-zona').textContent=plaza.zona;
+  document.getElementById('d-nombre').textContent=plaza.nombre;
+  document.getElementById('d-dir').textContent=plaza.direccion;
+  document.getElementById('d-precio').innerHTML=`${plaza.precio_hora}<span class="attr-unit">€/h</span>`;
+  const d=document.getElementById('d-disp');
+  d.textContent=plaza.disponible?'Disponible':'Ocupada'; d.style.color=plaza.disponible?'#2a9d6f':'#c0603a';
+  document.getElementById('d-tags').innerHTML=(plaza.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+  const btn=document.getElementById('reservar-btn'), hint=document.getElementById('login-hint');
+  if(!plaza.disponible){btn.disabled=true;btn.textContent='No disponible';btn.style.display='block';hint.style.display='none';}
+  else if(!currentUser){btn.style.display='none';hint.style.display='block';}
+  else{btn.disabled=false;btn.textContent='Reservar esta plaza';btn.style.display='block';hint.style.display='none';}
   showView('detail'); openPanel();
-  map.panTo([plaza.lat, plaza.lng], { animate:true, duration:0.5 });
+  map.panTo([plaza.lat,plaza.lng],{animate:true,duration:0.5});
 }
 
-// AUTH TABS
-function openAuth() { showView('login'); openPanel(); switchTab('login'); }
+function openAuth(){ showView('login'); openPanel(); switchTab('login'); }
 
 function switchTab(mode) {
-  document.getElementById('tab-login').classList.toggle('active', mode==='login');
-  document.getElementById('tab-register').classList.toggle('active', mode==='register');
-  document.getElementById('login-form').style.display    = mode==='login'    ? 'block' : 'none';
-  document.getElementById('register-form').style.display = mode==='register' ? 'block' : 'none';
+  document.getElementById('tab-login').classList.toggle('active',mode==='login');
+  document.getElementById('tab-register').classList.toggle('active',mode==='register');
+  document.getElementById('login-form').style.display=mode==='login'?'block':'none';
+  document.getElementById('register-form').style.display=mode==='register'?'block':'none';
+  document.getElementById('auth-title').textContent=mode==='login'?'Bienvenido':'Crear cuenta';
+  document.getElementById('login-error').classList.remove('show');
+  document.getElementById('reg-error').classList.remove('show');
 }
 
-function setRole(r) {
-  roleSelected = r;
-  document.getElementById('rb-conductor').className   = 'role-btn' + (r==='conductor'   ? ' active-conductor'   : '');
-  document.getElementById('rb-propietario').className = 'role-btn' + (r==='propietario' ? ' active-propietario' : '');
+function setRole(r){
+  roleSelected=r;
+  document.getElementById('rb-conductor').className='role-btn'+(r==='conductor'?' active-conductor':'');
+  document.getElementById('rb-propietario').className='role-btn'+(r==='propietario'?' active-propietario':'');
 }
 
-// LOGIN
-async function doLogin() {
-  const email = document.getElementById('l-email').value.trim();
-  const pass  = document.getElementById('l-pass').value;
-  const btn   = document.getElementById('login-btn');
-  const err   = document.getElementById('login-error');
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim(), pass=document.getElementById('l-pass').value;
+  const btn=document.getElementById('login-btn'), err=document.getElementById('login-error');
   err.classList.remove('show');
-  if (!email||!pass) { showMsg(err,'Rellena email y contraseña'); return; }
+  if(!email||!pass){showErr(err,'Rellena email y contraseña');return;}
   btn.disabled=true; btn.textContent='Entrando...';
-  try {
-    const { data, error } = await sb.auth.signInWithPassword({ email, password:pass });
-    if (error) throw error;
-    currentUser = data.user;
-    onLogin(data.user);
-  } catch(e) { showMsg(err, xlate(e.message)); }
+  try{
+    const{data,error}=await sb.auth.signInWithPassword({email,password:pass});
+    if(error)throw error;
+    currentUser=data.user; onLogin(data.user);
+  }catch(e){showErr(err,xlate(e.message));}
   btn.disabled=false; btn.textContent='Entrar';
 }
 
-// REGISTER
-async function doRegister() {
-  const name  = document.getElementById('r-name').value.trim();
-  const email = document.getElementById('r-email').value.trim();
-  const phone = document.getElementById('r-phone').value.trim();
-  const zona  = document.getElementById('r-zona').value;
-  const pass  = document.getElementById('r-pass').value;
-  const btn   = document.getElementById('reg-btn');
-  const err   = document.getElementById('reg-error');
-  const ok    = document.getElementById('reg-ok');
+async function doRegister(){
+  const name=document.getElementById('r-name').value.trim();
+  const email=document.getElementById('r-email').value.trim();
+  const phone=document.getElementById('r-phone').value.trim();
+  const zona=document.getElementById('r-zona').value;
+  const pass=document.getElementById('r-pass').value;
+  const btn=document.getElementById('reg-btn'), err=document.getElementById('reg-error'), ok=document.getElementById('reg-ok');
   err.classList.remove('show'); ok.classList.remove('show');
-
-  if (!name||!email||!phone||!zona||!pass) { showMsg(err,'Rellena todos los campos'); return; }
-  if (pass.length < 6) { showMsg(err,'Contraseña mínimo 6 caracteres'); return; }
-
+  if(!name||!email||!phone||!zona||!pass){showErr(err,'Rellena todos los campos');return;}
+  if(pass.length<6){showErr(err,'Contraseña mínimo 6 caracteres');return;}
   btn.disabled=true; btn.textContent='Creando cuenta...';
-  try {
-    // 1. Crear usuario en Supabase Auth
-    const { data, error } = await sb.auth.signUp({
-      email, password: pass,
-      options: { data: { full_name: name, phone, zona, rol: roleSelected } }
-    });
-    if (error) throw error;
+  try{
+    // Paso 1: crear en Supabase Auth
+    const{data,error}=await sb.auth.signUp({email,password:pass,options:{data:{full_name:name}}});
+    if(error)throw error;
 
-    // 2. Guardar perfil completo en tabla usuarios
-    await sb.from('usuarios').insert({
-      id:          data.user.id,
-      nombre:      name,
-      email:       email,
-      telefono:    phone,
-      zona:        zona,
-      rol:         roleSelected,
-      estado:      'nuevo',
-      created_at:  new Date().toISOString(),
+    // Paso 2: guardar perfil en tabla usuarios (sin pasar el ID — se genera automáticamente)
+    const{error:dbErr}=await sb.from('usuarios').insert({
+      nombre:name, email, telefono:phone, zona,
+      rol:roleSelected, estado:'nuevo',
+      created_at:new Date().toISOString()
     });
+    if(dbErr)console.warn('Perfil no guardado:', dbErr.message);
 
-    ok.textContent = '¡Cuenta creada! Revisa tu email para confirmarla y luego entra.';
+    ok.textContent='¡Cuenta creada! Revisa tu email para confirmarla y luego entra.';
     ok.classList.add('show');
-  } catch(e) { showMsg(err, xlate(e.message)); }
+  }catch(e){showErr(err,xlate(e.message));}
   btn.disabled=false; btn.textContent='Crear cuenta';
 }
 
-function showMsg(el, msg) { el.textContent=msg; el.classList.add('show'); }
-function xlate(m) {
-  if (m.includes('Invalid login'))      return 'Email o contraseña incorrectos';
-  if (m.includes('already registered')) return 'Este email ya está registrado';
-  if (m.includes('Password'))           return 'La contraseña debe tener al menos 6 caracteres';
+function showErr(el,msg){el.textContent=msg;el.classList.add('show');}
+function xlate(m){
+  if(m.includes('Invalid login'))return 'Email o contraseña incorrectos';
+  if(m.includes('already registered'))return 'Este email ya está registrado';
+  if(m.includes('Password'))return 'La contraseña debe tener al menos 6 caracteres';
   return m;
 }
 
-async function checkSession() {
-  const { data } = await sb.auth.getSession();
-  if (data.session) { currentUser=data.session.user; updateTopbar(data.session.user); }
-  sb.auth.onAuthStateChange((_e, session) => {
-    currentUser = session?.user || null;
-    if (currentUser) updateTopbar(currentUser);
-    else {
-      document.getElementById('user-name').style.display='none';
-      document.getElementById('logout-btn').style.display='none';
-      document.getElementById('auth-btn').style.display='block';
-    }
+async function checkSession(){
+  const{data}=await sb.auth.getSession();
+  if(data.session){currentUser=data.session.user;updateTopbar(data.session.user);}
+  sb.auth.onAuthStateChange((_e,session)=>{
+    currentUser=session?.user||null;
+    if(currentUser)updateTopbar(currentUser);
+    else{document.getElementById('user-name').style.display='none';document.getElementById('logout-btn').style.display='none';document.getElementById('auth-btn').style.display='block';}
   });
 }
 
-function onLogin(user) {
+function onLogin(user){
   updateTopbar(user);
-  if (currentPlaza) openDetail(currentPlaza);
+  if(currentPlaza)openDetail(currentPlaza);
   else closePanel();
-  showToast('Bienvenido, ' + (user.user_metadata?.full_name || user.email.split('@')[0]));
+  showToast('Bienvenido, '+(user.user_metadata?.full_name||user.email.split('@')[0]));
 }
 
-function updateTopbar(user) {
-  const name = user.user_metadata?.full_name || user.email.split('@')[0];
-  document.getElementById('user-name').textContent    = name;
-  document.getElementById('user-name').style.display  = 'block';
-  document.getElementById('logout-btn').style.display = 'block';
-  document.getElementById('auth-btn').style.display   = 'none';
+function updateTopbar(user){
+  const name=user.user_metadata?.full_name||user.email.split('@')[0];
+  document.getElementById('user-name').textContent=name;
+  document.getElementById('user-name').style.display='block';
+  document.getElementById('logout-btn').style.display='block';
+  document.getElementById('auth-btn').style.display='none';
 }
 
-async function logout() { await sb.auth.signOut(); showToast('Sesión cerrada'); }
+async function logout(){await sb.auth.signOut();showToast('Sesión cerrada');}
 
-// RESERVAR
-async function handleReservar() {
-  if (!currentUser||!currentPlaza) return;
-  const btn = document.getElementById('reservar-btn');
+async function handleReservar(){
+  if(!currentUser||!currentPlaza)return;
+  const btn=document.getElementById('reservar-btn');
   btn.disabled=true; btn.textContent='Reservando...';
-  try {
-    await sb.from('reservas').insert({
-      plaza_id:     currentPlaza.id,
-      plaza_nombre: currentPlaza.nombre,
-      zona:         currentPlaza.zona,
-      user_id:      currentUser.id,
-      user_email:   currentUser.email,
-      precio_hora:  currentPlaza.precio_hora,
-      estado:       'pendiente',
-      created_at:   new Date().toISOString(),
-    });
-  } catch(e) {}
-  document.getElementById('confirm-msg').innerHTML =
-    `<strong>${currentPlaza.nombre}</strong> en ${currentPlaza.zona}.<br><br>` +
-    `Te confirmaremos por email en breve.<br>El acceso será sin llave, desde el móvil.`;
+  try{
+    await sb.from('reservas').insert({plaza_id:currentPlaza.id,plaza_nombre:currentPlaza.nombre,zona:currentPlaza.zona,user_id:currentUser.id,user_email:currentUser.email,precio_hora:currentPlaza.precio_hora,estado:'pendiente',created_at:new Date().toISOString()});
+  }catch(e){}
+  document.getElementById('confirm-msg').innerHTML=`<strong>${currentPlaza.nombre}</strong> en ${currentPlaza.zona}.<br><br>Te confirmaremos por email en breve.<br>El acceso será sin llave, desde el móvil.`;
   showView('confirm');
 }
 
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2800);
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
 }
 </script>
 </body>
