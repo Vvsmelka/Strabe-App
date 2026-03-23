@@ -706,7 +706,7 @@
 <div id="toast"></div>
 
 <script>
-const sb=supabase.createClient('https://ubtyudgctlxozrjcibqm.supabase.co','sb_publishable_EXd56lcvdd0ogbe-hwmrQw_sVwNHNH8');
+let sb;
 
 const DEMO=[
   {id:1,nombre:"Plaza Moyua",direccion:"Pza. Moyua 3",zona:"Abando",lat:43.2637,lng:-2.9353,precio_hora:1.5,disponible:true,tags:["Cubierta","24h","Acceso facil"]},
@@ -748,6 +748,7 @@ loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supaba
 });
 
 async function boot() {
+  sb = supabase.createClient('https://ubtyudgctlxozrjcibqm.supabase.co','sb_publishable_EXd56lcvdd0ogbe-hwmrQw_sVwNHNH8');
   await checkSess();
   setTimeout(function() {
     document.getElementById('splash').classList.add('out');
